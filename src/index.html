@@ -190,7 +190,7 @@
   .btn.record .time { font-family: var(--mono); font-size: 20px; font-variant-numeric: tabular-nums; font-weight: 500; }
 
   /* Row 3: pre-flight tools. Ghosted while the words move. */
-  .icons { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); transition: opacity 0.2s; }
+  .icons { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--gap); transition: opacity 0.2s; }
   .icons.ghost { opacity: 0.45; }
   .icons button {
     border-radius: var(--r); border: 1px solid var(--line); background: rgba(22,22,26,0.8);
@@ -219,7 +219,7 @@
     .btn { font-size: 18px; }
     .btn.record[aria-pressed="true"] .lbl { display: none; }
     .btn.record .time { font-size: 16px; }
-    .icons { grid-row: 1; grid-column: 1 / -1; grid-template-columns: repeat(5, 1fr); }
+    .icons { grid-row: 1; grid-column: 1 / -1; grid-template-columns: repeat(6, 1fr); }
     .icons button { font-size: 14px; }
     #hint { bottom: auto; top: calc(var(--band-top) + var(--size) * 3); }
   }
@@ -262,6 +262,7 @@
       <button id="restart">Top</button>
       <button id="bigger">Aa<span class="aa" id="aaOut">56</span></button>
       <button id="mirror" aria-pressed="false">Mirror</button>
+      <button id="preview" aria-pressed="false">Preview</button>
       <button id="lens" hidden>Lens ◀</button>
     </div>
     <div class="primary">
@@ -364,6 +365,8 @@ Breathe. Look at the lens.`;
     $('record').querySelector('.lbl').textContent = countdownAbort ? 'Cancel' : (recOn() ? 'Stop' : 'Record');
     $('record').querySelector('.time').hidden = !recOn();
     $('back').disabled = recOn() || !!countdownAbort;
+    $('preview').disabled = recOn() || !!countdownAbort;
+    $('preview').setAttribute('aria-pressed', !!stream);
     icons.classList.toggle('ghost', scrolling);
   }
 
@@ -438,14 +441,14 @@ Breathe. Look at the lens.`;
       return false;
     }
     cam.srcObject = stream; cam.hidden = false; $('dim').hidden = false;
-    prompt.classList.add('camera');
+    prompt.classList.add('camera'); paint();
     return true;
   }
   function cameraOff() {
     if (!stream) return;
     stream.getTracks().forEach(t => t.stop()); stream = null;
     cam.srcObject = null; cam.hidden = true; $('dim').hidden = true;
-    prompt.classList.remove('camera');
+    prompt.classList.remove('camera'); paint();
   }
 
   // ---- recording ----
@@ -552,6 +555,7 @@ Breathe. Look at the lens.`;
   $('restart').onclick = () => { stopScroll(); scroller.scrollTop = 0; pos = 0; };
   $('bigger').onclick = () => { const i = SIZES.findIndex(s => s > +size.value); setSize(i < 0 ? SIZES[0] : SIZES[i]); };
   $('lens').onclick = () => { lensRight = !lensRight; applyLens(); save(); };
+  $('preview').onclick = () => stream ? cameraOff() : cameraOn();
   $('mirror').onclick = e => {
     const on = !scroller.classList.contains('mirror');
     scroller.classList.toggle('mirror', on);
