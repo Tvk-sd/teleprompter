@@ -18,6 +18,7 @@
     --size: 44px;
     --sat: env(safe-area-inset-top, 0px);
     --sab: env(safe-area-inset-bottom, 0px);
+    --zone: 42dvh;
   }
   html, body { height: 100%; background: var(--ink); color: var(--paper); }
   body {
@@ -69,7 +70,7 @@
   #scroller::-webkit-scrollbar { display: none; }
   #scroller.mirror { transform: scaleX(-1); }
   #text {
-    padding: 42dvh 6vw 70dvh;
+    padding: var(--zone) 6vw 70dvh;
     font-size: var(--size); line-height: 1.32; font-weight: 700;
     text-wrap: pretty; white-space: pre-wrap; word-break: break-word;
     max-width: 22ch; margin: 0 auto;
@@ -78,7 +79,7 @@
   /* Reading zone: the band the eye stays on. Fade everything above it. */
   .zone {
     position: absolute; left: 0; right: 0; pointer-events: none;
-    top: calc(42dvh - 0.2em);
+    top: calc(var(--zone) - 0.2em);
     height: calc(var(--size) * 1.32 * 2.2);
     border-top: 2px solid var(--amber);
     border-bottom: 2px solid var(--amber);
@@ -86,10 +87,33 @@
   }
   .zone::before { content: ""; position: absolute; left: 0; top: -4px; border: 7px solid transparent; border-left: 12px solid var(--amber); }
   .fade-top {
-    position: absolute; left: 0; right: 0; top: 0; height: calc(42dvh - 0.2em);
+    position: absolute; left: 0; right: 0; top: 0; height: calc(var(--zone) - 0.2em);
     background: linear-gradient(var(--ink) 30%, rgba(11,11,13,0.85) 70%, rgba(11,11,13,0)); pointer-events: none;
   }
   #tapzone { position: absolute; inset: 0; }
+
+  /* Camera mode: front camera behind the words, eyes stay near the lens. */
+  #cam {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; transform: scaleX(-1); background: var(--ink);
+  }
+  #prompt.camera .fade-top { background: linear-gradient(rgba(11,11,13,0.55), rgba(11,11,13,0)); }
+  #prompt.camera #text { text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7); }
+  #prompt.camera #text p { background: rgba(11,11,13,0.45); padding: 0.1em 0.3em; border-radius: 0.2em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .rec { color: #FF5A4E; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; position: absolute; top: calc(var(--sat) + 12px); left: 16px; pointer-events: none; display: flex; gap: 8px; align-items: center; }
+  .rec::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #FF5A4E; animation: blink 1s steps(2) infinite; }
+  @keyframes blink { to { opacity: 0; } }
+  .btns .record[aria-pressed="true"] { border-color: #FF5A4E; color: #FF5A4E; background: rgba(255,90,78,0.14); }
+
+  /* Landscape: reading band sits higher, next to the lens. HUD gets one dense row. */
+  @media (orientation: landscape) {
+    :root { --zone: 18dvh; }
+    #text { max-width: 34ch; }
+    #hud { grid-template-columns: 1fr 1fr; grid-template-areas: "speed size" "btns btns"; padding-top: 8px; }
+    #hud .row:nth-child(1) { grid-area: speed; }
+    #hud .row:nth-child(2) { grid-area: size; }
+    #hud .btns { grid-area: btns; grid-template-columns: repeat(6, 1fr); }
+  }
 
   #hud {
     position: absolute; left: 0; right: 0; bottom: 0;
@@ -103,7 +127,7 @@
   .row label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--paper-dim); }
   .row output { font-family: var(--mono); font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
   input[type=range] { width: 100%; accent-color: var(--amber); height: 32px; }
-  .btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+  .btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .btns button {
     background: var(--ink-2); border: 1px solid var(--line); border-radius: 10px;
     padding: 12px 6px; font-size: 14px; font-weight: 700;
@@ -137,6 +161,7 @@
 </main>
 
 <section id="prompt" hidden>
+  <video id="cam" autoplay playsinline muted hidden></video>
   <div id="scroller">
     <div id="text"></div>
   </div>
@@ -144,6 +169,7 @@
   <div class="zone"></div>
   <div id="tapzone" aria-label="Tap to pause or resume"></div>
   <div id="state">Paused · tap to run</div>
+  <div id="recState" class="rec" hidden>Rec <span id="recTime">0:00</span></div>
   <div id="count" hidden>3</div>
   <div id="hud">
     <div class="row">
@@ -160,6 +186,8 @@
       <button id="back">Edit</button>
       <button id="restart">Top</button>
       <button id="mirror" aria-pressed="false">Mirror</button>
+      <button id="camera" aria-pressed="false">Camera</button>
+      <button id="record" class="record" aria-pressed="false" hidden>Record</button>
       <button id="play" class="play">Run</button>
     </div>
   </div>
@@ -266,12 +294,91 @@ Good luck. Breathe. Look at the lens.`;
     await countdown();
     setRunning(true);
   }
-  function closePrompter() {
+  async function closePrompter() {
+    if (stream) await toggleCamera();
     setRunning(false);
     $('prompt').hidden = true; $('edit').hidden = false;
     wakeLock?.release?.(); wakeLock = null;
     refreshLabels();
   }
+
+  // ---- camera + recording ----
+  const cam = $('cam'), prompt = $('prompt');
+  let stream = null, recorder = null, chunks = [], recStart = 0, recTimer = 0;
+
+  async function toggleCamera(e) {
+    if (stream) {
+      if (recorder?.state === 'recording') await stopRecording();
+      stream.getTracks().forEach(t => t.stop()); stream = null;
+      cam.srcObject = null; cam.hidden = true; $('record').hidden = true;
+      prompt.classList.remove('camera'); e?.currentTarget?.setAttribute('aria-pressed', 'false');
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) { alert('This browser cannot open the camera here.'); return; }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: true });
+    } catch (err) {
+      alert('Camera blocked: ' + err.name + '. Allow camera and microphone for this page, then try again.');
+      return;
+    }
+    cam.srcObject = stream; cam.hidden = false; $('record').hidden = false;
+    prompt.classList.add('camera'); e?.currentTarget?.setAttribute('aria-pressed', 'true');
+  }
+  function pickMime() {
+    return ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(m => window.MediaRecorder?.isTypeSupported(m)) || '';
+  }
+  function startRecording() {
+    chunks = [];
+    const mimeType = pickMime();
+    try { recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined); }
+    catch (err) { alert('Recording not supported here: ' + err.message); return; }
+    recorder.ondataavailable = ev => { if (ev.data.size) chunks.push(ev.data); };
+    recorder.onstop = deliver;
+    recorder.start(1000);
+    recStart = Date.now();
+    $('recState').hidden = false; $('record').textContent = 'Stop'; $('record').setAttribute('aria-pressed', 'true');
+    recTimer = setInterval(() => {
+      const s = Math.round((Date.now() - recStart) / 1000);
+      $('recTime').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    }, 500);
+    if (!running) setRunning(true);
+  }
+  function stopRecording() {
+    return new Promise(res => {
+      if (!recorder || recorder.state !== 'recording') return res();
+      const done = recorder.onstop;
+      recorder.onstop = async () => { await done(); res(); };
+      recorder.stop();
+      clearInterval(recTimer);
+      $('recState').hidden = true; $('record').textContent = 'Record'; $('record').setAttribute('aria-pressed', 'false');
+      setRunning(false);
+    });
+  }
+  async function deliver() {
+    const type = recorder.mimeType || chunks[0]?.type || 'video/mp4';
+    const ext = type.includes('mp4') ? 'mp4' : 'webm';
+    const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+    const filename = `prompter-${stamp}.${ext}`;
+    const blob = new Blob(chunks, { type });
+    const file = new File([blob], filename, { type });
+    // 1. iOS share sheet: "Save Video" puts it in Photos.
+    if (navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'Prompter recording' }); return; } catch (err) { if (err.name === 'AbortError') return; }
+    }
+    // 2. Claude artifact host: confirmed save.
+    const downloads = await window.claude?.use?.('downloads');
+    if (downloads) {
+      try { await downloads.save({ filename, data: blob }); } catch (err) { if (err.code !== 'declined') alert('Could not save: ' + err.message); }
+      return;
+    }
+    // 3. Plain browser: download link.
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  }
+
+  $('camera').onclick = toggleCamera;
+  $('record').onclick = () => recorder?.state === 'recording' ? stopRecording() : startRecording();
 
   $('start').onclick = openPrompter;
   $('back').onclick = closePrompter;
