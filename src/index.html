@@ -236,6 +236,41 @@
     .group .speed { font-size: 17px; } .group .speed small { display: none; }
     #hint { bottom: auto; top: calc(var(--band-top) + var(--size) * 3); }
   }
+
+  /* ---------- Room (live sync) ---------- */
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .two .go { width: auto; }
+  .ghostBtn { background: var(--glass-2); border: 1.5px solid rgba(255,255,255,0.25); color: var(--paper); min-height: 72px; font-size: 18px; font-weight: 800; }
+  .dangerBtn { background: none; border: 1.5px solid rgba(255,59,48,0.5); color: var(--red); min-height: 56px; font-size: 16px; }
+  #roomStatus { font-family: var(--ui); }
+  #roomDot {
+    position: absolute; left: calc(var(--sal) + 20px); top: calc(var(--sat) + 16px); pointer-events: none;
+    font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--paper-70);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  }
+  .sheet { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: grid; place-items: center; padding: 20px; z-index: 10; }
+  .card {
+    width: min(440px, 100%); background: rgba(20,20,24,0.8); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--edge); border-radius: 30px; padding: 20px; display: grid; gap: 14px;
+  }
+  .cardHead { display: flex; justify-content: space-between; align-items: center; font-size: 20px; font-weight: 800; }
+  .cardHead button { width: 44px; height: 44px; border-radius: 999px; background: var(--glass-2); font-size: 24px; line-height: 1; }
+  .note { margin: 0; color: var(--paper-70); font-size: 14px; line-height: 1.5; }
+  .joinRow { display: grid; grid-template-columns: 1fr 96px; gap: 10px; }
+  .joinRow input {
+    min-height: 56px; border-radius: 999px; border: 1px solid var(--edge); background: var(--ink-2);
+    padding: 0 18px; font-family: var(--mono); font-size: 20px; letter-spacing: 0.1em; text-transform: uppercase; text-align: center;
+    -webkit-appearance: none;
+  }
+  .joinRow .btn { min-height: 56px; }
+  .bigCode { font-family: var(--script); font-size: 44px; font-weight: 700; text-align: center; letter-spacing: 0.06em; }
+  #qr { display: grid; place-items: center; min-height: 40px; }
+  #qr img, #qr canvas { background: #fff; padding: 12px; border-radius: 16px; }
+  .linkRow { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+  .linkRow span { font-family: var(--mono); font-size: 12px; color: var(--paper-70); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .linkRow button { min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--glass-2); font-weight: 800; }
+  /* Desktop: a writing surface. */
+  @media (min-width: 760px) { #edit { max-width: 860px; } textarea { min-height: 55vh; font-size: 22px; } }
   @media (prefers-reduced-motion: reduce) { #chip.rec::before { animation: none; } #text, .icons, #progress i { transition: none; } }
 </style>
 
@@ -247,6 +282,7 @@
   <textarea id="script" placeholder="Paste or type your script here. One idea per line." spellcheck="false"></textarea>
   <div class="meta">
     <span id="words">0 words</span>
+    <span id="roomStatus"></span>
     <span id="est">~0:00 at current speed</span>
   </div>
   <div class="setting">
@@ -254,8 +290,32 @@
     <input type="range" id="size" min="36" max="110" step="2" value="56">
     <output id="sizeOut">56 px</output>
   </div>
-  <button class="go" id="start">Open prompter</button>
+  <div class="two">
+    <button class="btn ghostBtn" id="roomBtn">Room</button>
+    <button class="go" id="start">Open prompter</button>
+  </div>
 </main>
+
+<div id="roomPanel" class="sheet" hidden>
+  <div class="card" role="dialog" aria-label="Room">
+    <div class="cardHead"><span>Room</span><button id="roomClose" aria-label="Close">×</button></div>
+    <div id="panelNone">
+      <p class="note">A room keeps the script the same on your Mac and your iPhone. Type on one, it shows on the other. While a room is open the script sits on a server in the EU. It is deleted after 24 hours, or when you delete the room.</p>
+      <button class="go" id="roomCreate">Create room</button>
+      <div class="joinRow">
+        <input id="roomInput" placeholder="ABCD-EFGH" autocapitalize="characters" autocomplete="off" spellcheck="false" inputmode="text" maxlength="9">
+        <button class="btn ghostBtn" id="roomJoin">Join</button>
+      </div>
+    </div>
+    <div id="panelRoom" hidden>
+      <div class="bigCode" id="bigCode"></div>
+      <div id="qr"></div>
+      <div class="linkRow"><span id="joinLink"></span><button id="copyLink">Copy</button></div>
+      <p class="note">On the iPhone: scan with the Camera app, or open Room and type the code.</p>
+      <div class="two"><button class="btn ghostBtn" id="roomLeave" style="min-height:56px">Leave</button><button class="btn dangerBtn" id="roomDelete">Delete room</button></div>
+    </div>
+  </div>
+</div>
 
 <section id="prompt" hidden>
   <video id="cam" autoplay playsinline muted hidden></video>
@@ -268,6 +328,7 @@
   <div class="zone"></div>
   <div id="progress"><i></i></div>
   <div id="chip" role="status" aria-live="polite">Ready</div>
+  <div id="roomDot" hidden></div>
   <div id="count" hidden>3</div>
   <div id="hint" hidden>Tap the words to hold. Tap again to go on.</div>
 
@@ -292,6 +353,7 @@
   </div>
 </section>
 
+<script src="core.js"></script>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
@@ -352,7 +414,7 @@ Breathe. Look at the lens.`;
     $('aaOut').textContent = size.value;
   }
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify({ text: ta.value, wpm: targetWpm, size: +size.value, mirror: scroller.classList.contains('mirror'), lensRight, hinted: saved.hinted })); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify({ text: ta.value, wpm: targetWpm, size: +size.value, mirror: scroller.classList.contains('mirror'), lensRight, hinted: saved.hinted, room: saved.room })); } catch (e) {}
   }
   function render() {
     text.innerHTML = '';
@@ -524,7 +586,7 @@ Breathe. Look at the lens.`;
   }
 
   // ---- speed: tap steps 5 wpm, hold repeats ----
-  function stepSpeed(d) { targetWpm = Math.min(300, Math.max(40, targetWpm + d)); applySpeed(); refreshLabels(); save(); }
+  function stepSpeed(d) { targetWpm = Math.min(300, Math.max(40, targetWpm + d)); applySpeed(); refreshLabels(); save(); schedulePush(); }
   function repeatOnHold(btn, d) {
     let t, i;
     const stop = () => { clearTimeout(t); clearInterval(i); };
@@ -564,7 +626,7 @@ Breathe. Look at the lens.`;
   function setSize(v) {
     size.value = v;
     const ratio = scroller.scrollHeight ? scroller.scrollTop / scroller.scrollHeight : 0;
-    render(); refreshLabels(); save();
+    render(); refreshLabels(); save(); schedulePush();
     scroller.scrollTop = pos = ratio * scroller.scrollHeight;   // keep the place in the script
   }
 
@@ -580,10 +642,10 @@ Breathe. Look at the lens.`;
     const on = !scroller.classList.contains('mirror');
     scroller.classList.toggle('mirror', on);
     e.currentTarget.setAttribute('aria-pressed', on);
-    save();
+    save(); schedulePush();
   };
-  size.oninput = () => { render(); refreshLabels(); save(); };
-  ta.oninput = () => { refreshLabels(); save(); };
+  size.oninput = () => { render(); refreshLabels(); save(); schedulePush(); };
+  ta.oninput = () => { refreshLabels(); save(); schedulePush(); };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !prompt.hidden) keepAwake(); });
   document.addEventListener('keydown', e => {
     if (prompt.hidden) return;
@@ -596,5 +658,136 @@ Breathe. Look at the lens.`;
 
   if (saved.mirror) { scroller.classList.add('mirror'); $('mirror').setAttribute('aria-pressed', 'true'); }
   render(); refreshLabels(); applyLens();
+
+  // ---- Room: live sync through Supabase. Nothing is loaded or sent until a room is opened. ----
+  const SB_URL = 'https://gvrxgmgihfxwqywqleft.supabase.co';
+  const SB_KEY = 'sb_publishable_ndbctNJWW1T8ZBI7W_w1qQ_bP--LT08';
+  const SB_LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js';
+  const QR_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  const core = window.PrompterCore;
+  const room = { code: null, client: null, channel: null, last: null, status: 'off', timer: 0 };
+
+  function loadLib(src) {
+    return new Promise((res, rej) => {
+      if (document.querySelector(`script[src="${src}"]`)) return res();
+      const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error('Could not load ' + src));
+      document.head.appendChild(el);
+    });
+  }
+  async function sb() {
+    if (room.client) return room.client;
+    await loadLib(SB_LIB);
+    room.client = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+    return room.client;
+  }
+  const STATUS = { off: '', connecting: 'connecting', connected: 'live', reconnecting: 'reconnecting', offline: 'offline' };
+  function setStatus(st) { room.status = st; paintRoom(); }
+  function paintRoom() {
+    const label = room.code ? `${core.formatCode(room.code)} · ${STATUS[room.status]}` : '';
+    $('roomStatus').textContent = label;
+    $('roomDot').textContent = label; $('roomDot').hidden = !room.code;
+    $('roomBtn').textContent = room.code ? core.formatCode(room.code) : 'Room';
+    $('roomBtn').classList.toggle('on', !!room.code);
+    $('panelNone').hidden = !!room.code; $('panelRoom').hidden = !room.code;
+    if (room.code) {
+      $('bigCode').textContent = core.formatCode(room.code);
+      $('joinLink').textContent = core.joinLink(location.href, room.code);
+    }
+  }
+  function snapshot() {
+    return { code: room.code, script: ta.value, wpm: targetWpm, size: +size.value, mirror: scroller.classList.contains('mirror'), updated_at: new Date().toISOString() };
+  }
+  function applyRow(row) {
+    if (!row || !core.isNewer(row, room.last)) return;
+    room.last = row;
+    targetWpm = row.wpm; size.value = row.size;
+    scroller.classList.toggle('mirror', !!row.mirror); $('mirror').setAttribute('aria-pressed', !!row.mirror);
+    if (row.script !== ta.value) {
+      const at = document.activeElement === ta ? ta.selectionStart : null;
+      ta.value = row.script;
+      if (at !== null) { const c = Math.min(at, row.script.length); ta.setSelectionRange(c, c); }
+    }
+    if (!prompt.hidden) {
+      const oh = scroller.scrollHeight, ot = scroller.scrollTop;
+      render(); scroller.scrollTop = pos = core.keptScrollTop(ot, oh, scroller.scrollHeight);
+    } else document.documentElement.style.setProperty('--size', size.value + 'px');
+    refreshLabels(); save();
+  }
+  async function push() {
+    if (!room.code) return;
+    const row = snapshot(); room.last = row;
+    try {
+      const c = await sb();
+      const { error } = await c.rpc('room_put', { p_code: row.code, p_script: row.script, p_wpm: row.wpm, p_size: row.size, p_mirror: row.mirror, p_updated_at: row.updated_at });
+      if (error) throw error;
+      room.channel?.send({ type: 'broadcast', event: 'state', payload: row });
+      if (room.status !== 'connecting') setStatus('connected');
+    } catch (e) { setStatus('offline'); }
+  }
+  function schedulePush() { if (!room.code) return; clearTimeout(room.timer); room.timer = setTimeout(push, 400); }
+  async function fetchRow(c, code) {
+    const { data, error } = await c.rpc('room_get', { p_code: code });
+    if (error) throw error;
+    return data && data[0];
+  }
+  async function joinRoom(input, { create = false } = {}) {
+    const code = core.normalizeCode(input);
+    if (!code) { alert('That code is not right. A code has 8 letters or numbers.'); return; }
+    await leaveRoom(false);
+    room.code = code; saved.room = code; save(); setStatus('connecting');
+    try {
+      const c = await sb();
+      if (create) await push();
+      else {
+        const row = await fetchRow(c, code);
+        if (!row) { room.code = null; saved.room = null; save(); setStatus('off'); alert('No room with that code. It may have expired.'); return; }
+        applyRow(row);
+      }
+      room.channel = c.channel('room:' + code, { config: { broadcast: { self: false } } })
+        .on('broadcast', { event: 'state' }, ({ payload }) => applyRow(payload))
+        .on('broadcast', { event: 'closed' }, () => { leaveRoom(true); alert('Room closed on the other device.'); })
+        .subscribe(async st => {
+          if (st === 'SUBSCRIBED') { setStatus('connected'); try { applyRow(await fetchRow(c, code)); } catch (e) {} }
+          else if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') setStatus('reconnecting');
+          else if (st === 'CLOSED') setStatus('offline');
+        });
+      showQr();
+    } catch (e) { setStatus('offline'); alert('Could not reach the room server. ' + (e.message || '')); }
+  }
+  async function leaveRoom(repaint = true) {
+    clearTimeout(room.timer);
+    if (room.channel) { try { await room.channel.unsubscribe(); } catch (e) {} room.channel = null; }
+    room.code = null; room.last = null; saved.room = null; save();
+    if (repaint) setStatus('off');
+  }
+  async function deleteRoom() {
+    if (!room.code) return;
+    const code = room.code;
+    try { const c = await sb(); room.channel?.send({ type: 'broadcast', event: 'closed', payload: {} }); await c.rpc('room_delete', { p_code: code }); } catch (e) {}
+    await leaveRoom(true);
+  }
+  async function showQr() {
+    const box = $('qr'); box.innerHTML = '';
+    if (!room.code || $('roomPanel').hidden) return;
+    try { await loadLib(QR_LIB); new window.QRCode(box, { text: core.joinLink(location.href, room.code), width: 200, height: 200, correctLevel: window.QRCode.CorrectLevel.M }); } catch (e) {}
+  }
+  function openPanel() { $('roomPanel').hidden = false; paintRoom(); showQr(); if (!room.code) $('roomInput').focus(); }
+  function closePanel() { $('roomPanel').hidden = true; }
+
+  $('roomBtn').onclick = openPanel;
+  $('roomClose').onclick = closePanel;
+  $('roomPanel').addEventListener('click', e => { if (e.target === $('roomPanel')) closePanel(); });
+  $('roomCreate').onclick = () => joinRoom(core.makeCode(), { create: true });
+  $('roomJoin').onclick = () => joinRoom($('roomInput').value);
+  $('roomInput').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom($('roomInput').value); });
+  $('roomLeave').onclick = () => { leaveRoom(true); closePanel(); };
+  $('roomDelete').onclick = () => { if (confirm('Delete this room? The script is removed from the server. Both devices leave.')) deleteRoom(); };
+  $('copyLink').onclick = async () => { try { await navigator.clipboard.writeText(core.joinLink(location.href, room.code)); $('copyLink').textContent = 'Copied'; setTimeout(() => $('copyLink').textContent = 'Copy', 1500); } catch (e) {} };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('roomPanel').hidden) closePanel(); });
+
+  const urlCode = core.codeFromUrl(location.href);
+  if (urlCode) { history.replaceState(null, '', location.pathname + location.search); joinRoom(urlCode); }
+  else if (saved.room) joinRoom(saved.room);
+  paintRoom();
 })();
 </script>
