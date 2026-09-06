@@ -28,8 +28,8 @@
     --band-top: calc(var(--zone) - 4px);
     --r: 14px;
     /* Control area. Fixed height so nothing moves under the thumb. */
-    --h-step: 56px; --h-primary: 76px; --h-icons: 44px; --gap: 8px;
-    --hud: calc(var(--h-step) + var(--h-primary) + var(--h-icons) + 3 * var(--gap) + 8px);
+    --h-step: 64px; --h-primary: 88px; --h-icons: 52px; --gap: 10px;
+    --hud: calc(var(--h-step) + var(--h-primary) + var(--h-icons) + 2 * var(--gap) + 8px + 12px);
   }
   html, body { height: 100%; background: var(--ink); color: var(--paper); }
   body {
@@ -124,9 +124,9 @@
 
   /* Status chip above the band: serves the eye. Button labels serve the thumb. */
   #chip {
-    position: absolute; left: 50%; transform: translateX(-50%);
-    top: calc(var(--band-top) - 46px);
-    font-family: var(--mono); font-size: 20px; letter-spacing: 0.08em; text-transform: uppercase;
+    position: absolute; right: calc(var(--sar) + 12px);
+    top: calc(var(--sat) + 8px);
+    font-family: var(--mono); font-size: 18px; letter-spacing: 0.08em; text-transform: uppercase;
     padding: 6px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap;
     background: rgba(11,11,13,0.8); color: var(--amber); border: 1px solid var(--amber);
     display: flex; gap: 10px; align-items: center;
@@ -152,10 +152,10 @@
   #hud {
     position: absolute; left: 0; right: 0; bottom: 0;
     height: calc(var(--sab) + var(--hud));
-    padding: 8px calc(var(--sar) + 12px) var(--sab) calc(var(--sal) + 12px);
+    padding: 8px calc(var(--sar) + 12px) calc(var(--sab) + 12px) calc(var(--sal) + 12px);
     background: linear-gradient(rgba(11,11,13,0), rgba(11,11,13,0.94) 30%);
     display: grid; gap: var(--gap);
-    grid-template-rows: var(--h-step) var(--h-primary) var(--h-icons);
+    grid-template-rows: var(--h-icons) var(--h-primary) var(--h-step);
     pointer-events: none;                 /* taps fall through to the words */
   }
   #hud button, #hud .group { pointer-events: auto; }
@@ -173,7 +173,7 @@
   .group .speed small { display: block; font-size: 12px; color: var(--paper-dim); letter-spacing: 0.08em; text-transform: uppercase; }
 
   /* Row 2: the two actions. Run is the amber primary; Record is fixed width so the row never reflows. */
-  .primary { display: grid; grid-template-columns: 1fr 128px; gap: var(--gap); }
+  .primary { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
   .btn {
     border-radius: var(--r); font-size: 21px; font-weight: 700;
     background: var(--ink-3); border: 1px solid var(--line);
@@ -183,19 +183,18 @@
   .btn:active { filter: brightness(1.25); }
   .btn.run { background: var(--amber); color: var(--ink); border-color: var(--amber); }
   .btn.run[aria-pressed="true"] { background: var(--amber-soft); color: var(--amber); }
-  .btn.record { background: var(--red-soft); color: var(--red); border-color: var(--red); flex-direction: column; gap: 2px; }
+  .btn.record { background: var(--red-soft); color: var(--red); border-color: var(--red); }
   .btn.record[aria-pressed="true"] { background: var(--red); color: var(--paper); }
   .btn.record .dot { width: 18px; height: 18px; border-radius: 50%; background: currentColor; }
   .btn.record[aria-pressed="true"] .dot { border-radius: 3px; }
-  .btn.record .lbl { font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; }
-  .btn.record .time { font-family: var(--mono); font-size: 18px; font-variant-numeric: tabular-nums; font-weight: 500; }
+  .btn.record .time { font-family: var(--mono); font-size: 20px; font-variant-numeric: tabular-nums; font-weight: 500; }
 
   /* Row 3: pre-flight tools. Ghosted while the words move. */
-  .icons { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--gap); transition: opacity 0.2s; }
+  .icons { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); transition: opacity 0.2s; }
   .icons.ghost { opacity: 0.45; }
   .icons button {
     border-radius: var(--r); border: 1px solid var(--line); background: rgba(22,22,26,0.8);
-    font-size: 15px; font-weight: 700; letter-spacing: 0.02em;
+    font-size: 17px; font-weight: 700; letter-spacing: 0.02em;
     display: flex; align-items: center; justify-content: center;
   }
   .icons button:active { background: var(--ink-3); }
@@ -204,23 +203,23 @@
 
   /* Landscape: controls sit on the non-lens half, in two short rows. */
   @media (orientation: landscape) {
-    :root { --zone: 12dvh; --h-step: 52px; --h-primary: 56px; --h-icons: 40px; --gap: 6px; --hud: calc(var(--h-primary) + var(--h-icons) + var(--gap) + 8px); }
+    :root { --zone: 12dvh; --h-step: 52px; --h-primary: 60px; --h-icons: 40px; --gap: 6px; --hud: calc(var(--h-primary) + var(--h-icons) + var(--gap) + 8px + 6px); }
     #text { max-width: 24ch; margin: 0 auto 0 calc(var(--sal) + 4vw); }
     #prompt.lens-right #text { margin: 0 calc(var(--sar) + 4vw) 0 auto; }
-    #chip { left: auto; right: calc(var(--sar) + 12px); top: 10px; transform: none; }
+    #chip { top: 10px; }
     #prompt.lens-right #chip { right: auto; left: calc(var(--sal) + 12px); }
     #hud {
-      left: 50%; right: 0; padding-left: 12px;
-      grid-template-rows: var(--h-primary) var(--h-icons); grid-template-columns: 1fr 1fr;
+      left: 50%; right: 0; padding-left: 12px; padding-bottom: calc(var(--sab) + 6px);
+      grid-template-rows: var(--h-icons) var(--h-primary); grid-template-columns: 1fr 1fr;
     }
     #prompt.lens-right #hud { left: 0; right: 50%; padding-left: calc(var(--sal) + 12px); padding-right: 12px; }
-    .group { grid-row: 1; grid-column: 1; grid-template-columns: 52px 1fr 52px; }
+    .group { grid-row: 2; grid-column: 1; grid-template-columns: 52px 1fr 52px; }
     .group .speed { font-size: 18px; } .group .speed small { display: none; }
-    .primary { grid-row: 1; grid-column: 2; grid-template-columns: 1fr 96px; }
+    .primary { grid-row: 2; grid-column: 2; }
     .btn { font-size: 18px; }
-    .btn.record .lbl { display: none; }
+    .btn.record[aria-pressed="true"] .lbl { display: none; }
     .btn.record .time { font-size: 16px; }
-    .icons { grid-row: 2; grid-column: 1 / -1; grid-template-columns: repeat(6, 1fr); }
+    .icons { grid-row: 1; grid-column: 1 / -1; grid-template-columns: repeat(5, 1fr); }
     .icons button { font-size: 14px; }
     #hint { bottom: auto; top: calc(var(--band-top) + var(--size) * 3); }
   }
@@ -258,22 +257,21 @@
   <div id="hint" hidden>Tap the words to hold. Tap again to go on.</div>
 
   <div id="hud">
-    <div class="group">
-      <button id="slower" aria-label="Slower">−</button>
-      <div class="speed"><span id="speedOut">120</span><small>words / min</small></div>
-      <button id="faster" aria-label="Faster">+</button>
-    </div>
-    <div class="primary">
-      <button class="btn run" id="run" aria-pressed="false">Run</button>
-      <button class="btn record" id="record" aria-pressed="false"><span class="dot"></span><span class="lbl">Record</span><span class="time" hidden>0:00</span></button>
-    </div>
     <div class="icons" id="icons">
       <button id="back">Edit</button>
       <button id="restart">Top</button>
       <button id="bigger">Aa<span class="aa" id="aaOut">56</span></button>
       <button id="mirror" aria-pressed="false">Mirror</button>
-      <button id="camera" aria-pressed="false">Cam</button>
       <button id="lens" hidden>Lens ◀</button>
+    </div>
+    <div class="primary">
+      <button class="btn run" id="run" aria-pressed="false">Run</button>
+      <button class="btn record" id="record" aria-pressed="false"><span class="dot"></span><span class="lbl">Record</span><span class="time" hidden>0:00</span></button>
+    </div>
+    <div class="group">
+      <button id="slower" aria-label="Slower">−</button>
+      <div class="speed"><span id="speedOut">120</span><small>words / min</small></div>
+      <button id="faster" aria-label="Faster">+</button>
     </div>
   </div>
 </section>
@@ -365,7 +363,6 @@ Breathe. Look at the lens.`;
     $('record').setAttribute('aria-pressed', recOn() || !!countdownAbort);
     $('record').querySelector('.lbl').textContent = countdownAbort ? 'Cancel' : (recOn() ? 'Stop' : 'Record');
     $('record').querySelector('.time').hidden = !recOn();
-    $('camera').disabled = recOn() || !!countdownAbort;
     $('back').disabled = recOn() || !!countdownAbort;
     icons.classList.toggle('ghost', scrolling);
   }
@@ -441,14 +438,14 @@ Breathe. Look at the lens.`;
       return false;
     }
     cam.srcObject = stream; cam.hidden = false; $('dim').hidden = false;
-    prompt.classList.add('camera'); $('camera').setAttribute('aria-pressed', 'true');
+    prompt.classList.add('camera');
     return true;
   }
   function cameraOff() {
     if (!stream) return;
     stream.getTracks().forEach(t => t.stop()); stream = null;
     cam.srcObject = null; cam.hidden = true; $('dim').hidden = true;
-    prompt.classList.remove('camera'); $('camera').setAttribute('aria-pressed', 'false');
+    prompt.classList.remove('camera');
   }
 
   // ---- recording ----
@@ -554,7 +551,6 @@ Breathe. Look at the lens.`;
   $('record').onclick = () => countdownAbort ? countdownAbort() : (recOn() ? stopRecording() : startRecording());
   $('restart').onclick = () => { stopScroll(); scroller.scrollTop = 0; pos = 0; };
   $('bigger').onclick = () => { const i = SIZES.findIndex(s => s > +size.value); setSize(i < 0 ? SIZES[0] : SIZES[i]); };
-  $('camera').onclick = () => stream ? cameraOff() : cameraOn();
   $('lens').onclick = () => { lensRight = !lensRight; applyLens(); save(); };
   $('mirror').onclick = e => {
     const on = !scroller.classList.contains('mirror');
