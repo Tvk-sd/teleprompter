@@ -8,17 +8,24 @@
   :root {
     --ink: #0B0B0D;
     --ink-2: #16161A;
+    --ink-3: #222228;
     --paper: #F3EFE6;
-    --paper-dim: #7E7B73;
-    --line: #2A2A30;
+    --paper-dim: #8E8B83;
+    --line: #34343B;
     --amber: #F5B942;
-    --amber-soft: rgba(245, 185, 66, 0.14);
+    --amber-soft: rgba(245, 185, 66, 0.16);
+    --red: #FF5A4E;
+    --red-soft: rgba(255, 90, 78, 0.18);
     --script: "Atkinson Hyperlegible", "Helvetica Neue", Arial, sans-serif;
     --mono: "IBM Plex Mono", "SF Mono", Menlo, monospace;
-    --size: 44px;
+    --size: 56px;
     --sat: env(safe-area-inset-top, 0px);
     --sab: env(safe-area-inset-bottom, 0px);
-    --zone: 42dvh;
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+    /* Reading band: as close to the front lens as the status bar allows. */
+    --zone: calc(var(--sat) + 9dvh);
+    --tap: 64px;
   }
   html, body { height: 100%; background: var(--ink); color: var(--paper); }
   body {
@@ -26,41 +33,49 @@
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
+    -webkit-user-select: none; user-select: none;
   }
+  textarea { -webkit-user-select: text; user-select: text; }
   button, input, textarea { font: inherit; color: inherit; }
-  button { background: none; border: 0; cursor: pointer; }
+  button { background: none; border: 0; cursor: pointer; touch-action: manipulation; }
   button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  button:disabled { opacity: 0.35; }
   [hidden] { display: none !important; }
 
   /* ---------- Edit screen ---------- */
   #edit {
     min-height: 100dvh;
     display: flex; flex-direction: column;
-    padding: calc(var(--sat) + 20px) 20px calc(var(--sab) + 20px);
+    padding: calc(var(--sat) + 20px) calc(var(--sar) + 20px) calc(var(--sab) + 20px) calc(var(--sal) + 20px);
     gap: 14px;
     max-width: 720px; margin: 0 auto;
   }
   .brand { display: flex; align-items: baseline; justify-content: space-between; }
-  .brand h1 { font-size: 22px; font-weight: 700; letter-spacing: 0.02em; }
-  .brand span { font-family: var(--mono); font-size: 12px; color: var(--paper-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+  .brand h1 { font-size: 24px; font-weight: 700; letter-spacing: 0.02em; }
+  .brand span { font-family: var(--mono); font-size: 13px; color: var(--paper-dim); letter-spacing: 0.08em; text-transform: uppercase; }
   textarea {
-    flex: 1; min-height: 42vh;
+    flex: 1; min-height: 40vh;
     width: 100%; resize: none;
     background: var(--ink-2); border: 1px solid var(--line); border-radius: 12px;
     padding: 16px; font-size: 19px; line-height: 1.5;
     -webkit-appearance: none;
   }
   textarea::placeholder { color: var(--paper-dim); }
-  .meta { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 12px; color: var(--paper-dim); letter-spacing: 0.06em; text-transform: uppercase; }
+  .meta { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 14px; color: var(--paper-dim); letter-spacing: 0.04em; text-transform: uppercase; }
   .go {
     background: var(--amber); color: var(--ink);
-    font-weight: 700; font-size: 20px; letter-spacing: 0.02em;
-    border-radius: 14px; padding: 18px; width: 100%;
+    font-weight: 700; font-size: 22px; letter-spacing: 0.02em;
+    border-radius: 16px; min-height: 72px; width: 100%;
   }
   .go:active { filter: brightness(0.92); }
 
   /* ---------- Prompt screen ---------- */
   #prompt { position: fixed; inset: 0; background: var(--ink); }
+  #cam {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; transform: scaleX(-1); background: var(--ink);
+  }
+  #dim { position: absolute; inset: 0; background: rgba(0,0,0,0.35); pointer-events: none; }
   #scroller {
     position: absolute; inset: 0;
     overflow-y: auto; overflow-x: hidden;
@@ -70,81 +85,111 @@
   #scroller::-webkit-scrollbar { display: none; }
   #scroller.mirror { transform: scaleX(-1); }
   #text {
-    padding: var(--zone) 6vw 70dvh;
-    font-size: var(--size); line-height: 1.32; font-weight: 700;
+    padding: var(--zone) calc(var(--sar) + 5vw) 80dvh calc(var(--sal) + 5vw);
+    font-size: var(--size); line-height: 1.3; font-weight: 700;
     text-wrap: pretty; white-space: pre-wrap; word-break: break-word;
-    max-width: 22ch; margin: 0 auto;
+    max-width: 20ch; margin: 0 auto;
+    transition: opacity 0.2s;
   }
-  #text p { margin: 0 0 0.7em; }
-  /* Reading zone: the band the eye stays on. Fade everything above it. */
+  #text p { margin: 0 0 0.6em; }
+  #prompt.camera #text { text-shadow: 0 2px 6px rgba(0,0,0,0.9); }
+  #prompt.camera #text p {
+    background: rgba(11,11,13,0.72); padding: 0.08em 0.3em; border-radius: 0.18em;
+    box-decoration-break: clone; -webkit-box-decoration-break: clone;
+  }
+  #prompt.held #text { opacity: 0.45; }
+
   .zone {
-    position: absolute; left: 0; right: 0; pointer-events: none;
+    position: absolute; left: var(--sal); right: var(--sar); pointer-events: none;
     top: calc(var(--zone) - 0.2em);
-    height: calc(var(--size) * 1.32 * 2.2);
-    border-top: 2px solid var(--amber);
-    border-bottom: 2px solid var(--amber);
-    opacity: 0.7;
+    height: calc(var(--size) * 1.3 * 2.2);
+    border-top: 3px solid var(--amber);
+    border-bottom: 3px solid var(--amber);
+    opacity: 0.8;
   }
-  .zone::before { content: ""; position: absolute; left: 0; top: -4px; border: 7px solid transparent; border-left: 12px solid var(--amber); }
+  .zone::before { content: ""; position: absolute; left: 0; top: -6px; border: 9px solid transparent; border-left: 14px solid var(--amber); }
   .fade-top {
     position: absolute; left: 0; right: 0; top: 0; height: calc(var(--zone) - 0.2em);
-    background: linear-gradient(var(--ink) 30%, rgba(11,11,13,0.85) 70%, rgba(11,11,13,0)); pointer-events: none;
+    background: linear-gradient(var(--ink) 20%, rgba(11,11,13,0.9) 60%, rgba(11,11,13,0)); pointer-events: none;
   }
-  #tapzone { position: absolute; inset: 0; }
+  #prompt.camera .fade-top { background: linear-gradient(rgba(11,11,13,0.6), rgba(11,11,13,0)); }
 
-  /* Camera mode: front camera behind the words, eyes stay near the lens. */
-  #cam {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: cover; transform: scaleX(-1); background: var(--ink);
+  /* Big status chip inside the band. Readable at arm's length. */
+  #chip {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    top: calc(var(--zone) - 0.2em - 46px);
+    font-family: var(--mono); font-size: 20px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 6px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap;
+    background: rgba(11,11,13,0.8); color: var(--amber); border: 1px solid var(--amber);
+    display: flex; gap: 10px; align-items: center;
   }
-  #prompt.camera .fade-top { background: linear-gradient(rgba(11,11,13,0.55), rgba(11,11,13,0)); }
-  #prompt.camera #text { text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7); }
-  #prompt.camera #text p { background: rgba(11,11,13,0.45); padding: 0.1em 0.3em; border-radius: 0.2em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
-  .rec { color: #FF5A4E; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; position: absolute; top: calc(var(--sat) + 12px); left: 16px; pointer-events: none; display: flex; gap: 8px; align-items: center; }
-  .rec::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #FF5A4E; animation: blink 1s steps(2) infinite; }
+  #chip.rec { color: var(--red); border-color: var(--red); }
+  #chip.rec::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--red); animation: blink 1s steps(2) infinite; }
+  #chip.held::before { animation: none; }
   @keyframes blink { to { opacity: 0; } }
-  .btns .record[aria-pressed="true"] { border-color: #FF5A4E; color: #FF5A4E; background: rgba(255,90,78,0.14); }
-
-  /* Landscape: reading band sits higher, next to the lens. HUD gets one dense row. */
-  @media (orientation: landscape) {
-    :root { --zone: 18dvh; }
-    #text { max-width: 34ch; }
-    #hud { grid-template-columns: 1fr 1fr; grid-template-areas: "speed size" "btns btns"; padding-top: 8px; }
-    #hud .row:nth-child(1) { grid-area: speed; }
-    #hud .row:nth-child(2) { grid-area: size; }
-    #hud .btns { grid-area: btns; grid-template-columns: repeat(6, 1fr); }
+  #count {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    top: calc(var(--zone) + 0.1em);
+    font-size: calc(var(--size) * 1.6); font-weight: 700; color: var(--amber); pointer-events: none;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+  }
+  #hint {
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: 210px;
+    font-size: 20px; color: var(--paper); background: rgba(11,11,13,0.85);
+    border: 1px solid var(--line); border-radius: 12px; padding: 12px 18px; pointer-events: none;
   }
 
+  /* ---------- Controls ---------- */
   #hud {
     position: absolute; left: 0; right: 0; bottom: 0;
-    padding: 14px 16px calc(var(--sab) + 14px);
-    background: linear-gradient(rgba(11,11,13,0), rgba(11,11,13,0.96) 30%);
-    display: grid; gap: 12px;
-    transition: opacity 0.25s, transform 0.25s;
+    padding: 10px calc(var(--sar) + 12px) calc(var(--sab) + 10px) calc(var(--sal) + 12px);
+    background: linear-gradient(rgba(11,11,13,0), rgba(11,11,13,0.94) 25%);
+    display: grid; gap: 10px;
   }
-  #hud.hidden { opacity: 0; transform: translateY(12px); pointer-events: none; }
-  .row { display: grid; grid-template-columns: 62px 1fr 64px; align-items: center; gap: 12px; }
-  .row label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--paper-dim); }
-  .row output { font-family: var(--mono); font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
-  input[type=range] { width: 100%; accent-color: var(--amber); height: 32px; }
-  .btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .btns button {
-    background: var(--ink-2); border: 1px solid var(--line); border-radius: 10px;
-    padding: 12px 6px; font-size: 14px; font-weight: 700;
+  /* Rail: always on screen. */
+  .rail { display: grid; grid-template-columns: var(--tap) 1fr var(--tap); gap: 10px; align-items: stretch; }
+  .rail .stepper { grid-row: 1; }
+  .rail .speed { grid-row: 1; display: grid; place-items: center; font-family: var(--mono); font-size: 20px; font-variant-numeric: tabular-nums; }
+  .rail .speed small { display: block; font-size: 13px; color: var(--paper-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+  .primary { grid-row: 2; grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+  .btn {
+    min-height: var(--tap); border-radius: 14px; font-size: 20px; font-weight: 700;
+    background: var(--ink-3); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 0 12px;
   }
-  .btns button[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); background: var(--amber-soft); }
-  .btns .play { background: var(--amber); color: var(--ink); border-color: var(--amber); }
-  #state {
-    position: absolute; top: calc(var(--sat) + 12px); right: 16px;
-    font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--amber); pointer-events: none;
+  .btn:active { filter: brightness(1.25); }
+  .btn[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); background: var(--amber-soft); }
+  .btn.run { background: var(--amber); color: var(--ink); border-color: var(--amber); }
+  .btn.run.on { background: var(--amber-soft); color: var(--amber); }
+  .btn.record { background: var(--red-soft); color: var(--red); border-color: var(--red); }
+  .btn.record.on { background: var(--red); color: #fff; }
+  .btn.record .dot { width: 18px; height: 18px; border-radius: 50%; background: currentColor; }
+  .btn.record.on .dot { border-radius: 3px; }
+  .btn .time { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 500; }
+  .btn.stepper { font-size: 30px; }
+  /* Tray: only while nothing is moving. */
+  .tray { display: grid; gap: 10px; }
+  .tray .row { display: grid; grid-template-columns: 64px 1fr 72px; align-items: center; gap: 10px; }
+  .tray label { font-family: var(--mono); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper-dim); }
+  .tray output { font-family: var(--mono); font-size: 17px; text-align: right; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--amber); height: 44px; }
+  .tray .btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .tray .btn { min-height: 56px; font-size: 17px; }
+
+  /* Landscape: lens is on one side. Column hugs that side. */
+  @media (orientation: landscape) {
+    :root { --zone: 12dvh; --tap: 56px; }
+    #chip { left: auto; right: calc(var(--sar) + 12px); top: 10px; transform: none; }
+    #text { max-width: 24ch; margin: 0 auto 0 calc(var(--sal) + 4vw); }
+    #prompt.lens-right #text { margin: 0 calc(var(--sar) + 4vw) 0 auto; }
+    #hud { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .rail { grid-column: 1; }
+    .tray { grid-column: 2; }
+    .tray .btns { grid-template-columns: repeat(5, 1fr); }
+    #hint { bottom: 170px; }
   }
-  #count {
-    position: absolute; inset: 0; display: grid; place-items: center;
-    font-size: 30vmin; font-weight: 700; color: var(--amber);
-    background: rgba(11,11,13,0.6); pointer-events: none;
-  }
-  @media (prefers-reduced-motion: reduce) { #hud { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { #chip.rec::before { animation: none; } #text { transition: none; } }
 </style>
 
 <main id="edit">
@@ -157,38 +202,44 @@
     <span id="words">0 words</span>
     <span id="est">~0:00 at current speed</span>
   </div>
-  <button class="go" id="start">Start prompter</button>
+  <button class="go" id="start">Open prompter</button>
 </main>
 
 <section id="prompt" hidden>
   <video id="cam" autoplay playsinline muted hidden></video>
+  <div id="dim" hidden></div>
   <div id="scroller">
     <div id="text"></div>
   </div>
   <div class="fade-top"></div>
   <div class="zone"></div>
-  <div id="tapzone" aria-label="Tap to pause or resume"></div>
-  <div id="state">Paused · tap to run</div>
-  <div id="recState" class="rec" hidden>Rec <span id="recTime">0:00</span></div>
+  <div id="chip">Ready</div>
   <div id="count" hidden>3</div>
+  <div id="hint" hidden>Tap the words to hold. Tap again to go on.</div>
+
   <div id="hud">
-    <div class="row">
-      <label for="speed">Speed</label>
-      <input type="range" id="speed" min="10" max="160" step="2" value="52">
-      <output id="speedOut">120 wpm</output>
+    <div class="rail">
+      <button class="btn stepper" id="slower" aria-label="Slower">−</button>
+      <div class="speed"><span id="speedOut">120</span><small>words / min</small></div>
+      <button class="btn stepper" id="faster" aria-label="Faster">+</button>
+      <div class="primary">
+        <button class="btn run" id="run">Run</button>
+        <button class="btn record" id="record"><span class="dot"></span><span class="lbl">Record</span><span class="time" hidden>0:00</span></button>
+      </div>
     </div>
-    <div class="row">
-      <label for="size">Size</label>
-      <input type="range" id="size" min="24" max="96" step="2" value="44">
-      <output id="sizeOut">44 px</output>
-    </div>
-    <div class="btns">
-      <button id="back">Edit</button>
-      <button id="restart">Top</button>
-      <button id="mirror" aria-pressed="false">Mirror</button>
-      <button id="camera" aria-pressed="false">Camera</button>
-      <button id="record" class="record" aria-pressed="false" hidden>Record</button>
-      <button id="play" class="play">Run</button>
+    <div class="tray" id="tray">
+      <div class="row">
+        <label for="size">Size</label>
+        <input type="range" id="size" min="36" max="110" step="2" value="56">
+        <output id="sizeOut">56 px</output>
+      </div>
+      <div class="btns">
+        <button class="btn" id="back">Edit</button>
+        <button class="btn" id="restart">Top</button>
+        <button class="btn" id="mirror" aria-pressed="false">Mirror</button>
+        <button class="btn" id="camera" aria-pressed="false">Camera</button>
+        <button class="btn" id="lens" hidden>Lens ◀</button>
+      </div>
     </div>
   </div>
 </section>
@@ -198,52 +249,59 @@
   const $ = id => document.getElementById(id);
   const SAMPLE = `Example script. Replace me.
 
-Tap the screen once to start scrolling.
-Tap again to pause.
+Tap Run to start the words.
+Tap the words to hold. Tap again to go on.
+
+Tap Record to film yourself.
+The camera comes on, you get three seconds, then the words and the recording start together.
+
+Holding the words also holds the recording.
+Tap Record again to stop and save the video.
 
 The amber band is where your eyes stay.
-The words come to you. You do not chase them.
+It sits near the lens so you look at the camera.
 
-Drag the Speed slider until the pace feels like your own voice.
-Drag Size until you can read this from across the room.
+Minus and plus change the speed while you read.
+Size and Mirror live below.
 
-Mirror flips the text for a real teleprompter glass.
-Top jumps back to the start.
+Breathe. Look at the lens.`;
 
-Good luck. Breathe. Look at the lens.`;
-
-  const KEY = 'prompter.v1';
+  const KEY = 'prompter.v2';
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
 
-  const ta = $('script'), speed = $('speed'), size = $('size');
+  const ta = $('script'), size = $('size');
+  const scroller = $('scroller'), text = $('text'), prompt = $('prompt'), chip = $('chip'), tray = $('tray');
+  const cam = $('cam');
   ta.value = saved.text ?? SAMPLE;
-  speed.value = saved.speed ?? 52;
-  size.value = saved.size ?? 44;
+  size.value = saved.size ?? 56;
+  let speedPx = saved.speed ?? 56;           // px per second
+  let lensRight = saved.lensRight ?? false;
 
-  const scroller = $('scroller'), text = $('text'), hud = $('hud'), state = $('state');
-  let running = false, pos = 0, last = 0, raf = 0, wakeLock = null;
+  // ---- state ----
+  // scrolling: words move.  rec: recorder exists.  held: rec paused by a tap.
+  let scrolling = false, held = false, countingDown = false;
+  let pos = 0, last = 0, raf = 0, wakeLock = null;
+  let stream = null, recorder = null, chunks = [], recStart = 0, recElapsed = 0, recTimer = 0, autoStopTimer = 0;
+  const recOn = () => recorder && recorder.state !== 'inactive';
 
   const words = () => (ta.value.trim().match(/\S+/g) || []).length;
-
-  // Speed is stored as px/s. The label shows words per minute so it means
-  // something to a human. Estimate: how many words fit in one scrolled px.
   function wpm() {
-    const h = text.scrollHeight - 1.12 * innerHeight; // minus the empty lead-in / lead-out
+    const h = text.scrollHeight - 0.89 * innerHeight;
     const w = words();
-    if (h <= 0 || !w) return Math.round(+speed.value * 2.3);
-    return Math.round((+speed.value / h) * w * 60);
+    if (h <= 0 || !w) return Math.round(speedPx * 2.1);
+    return Math.round((speedPx / h) * w * 60);
   }
   function refreshLabels() {
     const w = words();
     $('words').textContent = `${w} word${w === 1 ? '' : 's'}`;
     const secs = wpm() ? Math.round(w / wpm() * 60) : 0;
     $('est').textContent = `~${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')} at current speed`;
-    $('speedOut').textContent = `${wpm()} wpm`;
+    $('speedOut').textContent = wpm();
     $('sizeOut').textContent = `${size.value} px`;
   }
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify({ text: ta.value, speed: +speed.value, size: +size.value, mirror: scroller.classList.contains('mirror') })); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify({ text: ta.value, speed: speedPx, size: +size.value, mirror: scroller.classList.contains('mirror'), lensRight, hinted: saved.hinted })); } catch (e) {}
   }
   function render() {
     text.innerHTML = '';
@@ -254,105 +312,129 @@ Good luck. Breathe. Look at the lens.`;
     });
     document.documentElement.style.setProperty('--size', size.value + 'px');
   }
+  const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
-  // ---- scrolling loop ----
+  function paint() {
+    // chip
+    chip.classList.toggle('rec', recOn());
+    chip.classList.toggle('held', held);
+    if (recOn()) chip.textContent = held ? 'Rec held' : 'Rec';
+    else chip.textContent = scrolling ? 'Rolling' : (held ? 'Held' : 'Ready');
+    prompt.classList.toggle('held', held);
+    // buttons
+    $('run').textContent = scrolling ? 'Hold' : (held ? 'Go on' : 'Run');
+    $('run').classList.toggle('on', scrolling);
+    $('record').classList.toggle('on', recOn());
+    $('record').querySelector('.lbl').textContent = recOn() ? 'Stop' : 'Record';
+    $('record').querySelector('.time').hidden = !recOn();
+    $('camera').disabled = recOn();
+    $('back').disabled = recOn();
+    // tray hides while the words move
+    tray.hidden = scrolling;
+  }
+
+  // ---- scrolling ----
   function tick(now) {
-    if (!running) return;
+    if (!scrolling) return;
     const dt = Math.min((now - last) / 1000, 0.1);
     last = now;
-    pos += +speed.value * dt;
+    pos += speedPx * dt;
     const max = scroller.scrollHeight - scroller.clientHeight;
-    if (pos >= max) { pos = max; setRunning(false); }
+    if (pos >= max) { pos = max; scroller.scrollTop = pos; endOfScript(); return; }
     scroller.scrollTop = pos;
     raf = requestAnimationFrame(tick);
   }
-  function setRunning(on) {
-    running = on;
-    hud.classList.toggle('hidden', on);
-    state.textContent = on ? 'Running · tap to pause' : 'Paused · tap to run';
-    $('play').textContent = on ? 'Pause' : 'Run';
-    if (on) { pos = scroller.scrollTop; last = performance.now(); raf = requestAnimationFrame(tick); }
-    else cancelAnimationFrame(raf);
+  function go() {
+    if (scrolling) return;
+    scrolling = true; held = false;
+    pos = scroller.scrollTop; last = performance.now(); raf = requestAnimationFrame(tick);
+    if (recOn() && recorder.state === 'paused') recorder.resume();
+    paint();
   }
+  function hold() {
+    if (!scrolling) return;
+    scrolling = false; held = true;
+    cancelAnimationFrame(raf);
+    if (recOn() && recorder.state === 'recording') { try { recorder.pause(); } catch (e) {} }
+    paint();
+  }
+  function stopScroll() { scrolling = false; held = false; cancelAnimationFrame(raf); paint(); }
+  function endOfScript() {
+    hold();
+    if (recOn()) { chip.textContent = 'End · saving in 3 s'; autoStopTimer = setTimeout(stopRecording, 3000); }
+  }
+
+  // Tap on the words = hold / go on. A drag scrubs instead.
+  let tapStart = null;
+  scroller.addEventListener('pointerdown', e => { tapStart = { x: e.clientX, y: e.clientY, t: Date.now() }; });
+  scroller.addEventListener('pointerup', e => {
+    if (!tapStart) return;
+    const moved = Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y);
+    const quick = Date.now() - tapStart.t < 400;
+    tapStart = null;
+    if (moved > 12 || !quick || countingDown) return;
+    hideHint();
+    scrolling ? hold() : go();
+  });
+
   async function countdown() {
-    const c = $('count');
-    c.hidden = false;
+    countingDown = true;
+    const c = $('count'); c.hidden = false;
     for (const n of [3, 2, 1]) { c.textContent = n; await new Promise(r => setTimeout(r, 700)); }
-    c.hidden = true;
+    c.hidden = true; countingDown = false;
   }
-  async function keepAwake() {
-    try { wakeLock = await navigator.wakeLock?.request('screen'); } catch (e) {}
-  }
+  async function keepAwake() { try { wakeLock = await navigator.wakeLock?.request('screen'); } catch (e) {} }
+  function showHint() { if (saved.hinted) return; $('hint').hidden = false; setTimeout(hideHint, 6000); }
+  function hideHint() { $('hint').hidden = true; if (!saved.hinted) { saved.hinted = true; save(); } }
 
-  // ---- screens ----
-  async function openPrompter() {
-    save(); render();
-    $('edit').hidden = true; $('prompt').hidden = false;
-    scroller.scrollTop = 0; pos = 0;
-    refreshLabels();
-    keepAwake();
-    await countdown();
-    setRunning(true);
-  }
-  async function closePrompter() {
-    if (stream) await toggleCamera();
-    setRunning(false);
-    $('prompt').hidden = true; $('edit').hidden = false;
-    wakeLock?.release?.(); wakeLock = null;
-    refreshLabels();
-  }
-
-  // ---- camera + recording ----
-  const cam = $('cam'), prompt = $('prompt');
-  let stream = null, recorder = null, chunks = [], recStart = 0, recTimer = 0;
-
-  async function toggleCamera(e) {
-    if (stream) {
-      if (recorder?.state === 'recording') await stopRecording();
-      stream.getTracks().forEach(t => t.stop()); stream = null;
-      cam.srcObject = null; cam.hidden = true; $('record').hidden = true;
-      prompt.classList.remove('camera'); e?.currentTarget?.setAttribute('aria-pressed', 'false');
-      return;
-    }
-    if (!navigator.mediaDevices?.getUserMedia) { alert('This browser cannot open the camera here.'); return; }
+  // ---- camera ----
+  async function cameraOn() {
+    if (stream) return true;
+    if (!navigator.mediaDevices?.getUserMedia) { alert('This browser cannot open the camera here.'); return false; }
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: true });
     } catch (err) {
       alert('Camera blocked: ' + err.name + '. Allow camera and microphone for this page, then try again.');
-      return;
+      return false;
     }
-    cam.srcObject = stream; cam.hidden = false; $('record').hidden = false;
-    prompt.classList.add('camera'); e?.currentTarget?.setAttribute('aria-pressed', 'true');
+    cam.srcObject = stream; cam.hidden = false; $('dim').hidden = false;
+    prompt.classList.add('camera'); $('camera').setAttribute('aria-pressed', 'true');
+    return true;
   }
-  function pickMime() {
-    return ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(m => window.MediaRecorder?.isTypeSupported(m)) || '';
+  function cameraOff() {
+    if (!stream) return;
+    stream.getTracks().forEach(t => t.stop()); stream = null;
+    cam.srcObject = null; cam.hidden = true; $('dim').hidden = true;
+    prompt.classList.remove('camera'); $('camera').setAttribute('aria-pressed', 'false');
   }
-  function startRecording() {
+
+  // ---- recording ----
+  const pickMime = () => ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(m => window.MediaRecorder?.isTypeSupported(m)) || '';
+  async function startRecording() {
+    if (!(await cameraOn())) return;
     chunks = [];
     const mimeType = pickMime();
     try { recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined); }
-    catch (err) { alert('Recording not supported here: ' + err.message); return; }
+    catch (err) { alert('Recording not supported here: ' + err.message); recorder = null; return; }
     recorder.ondataavailable = ev => { if (ev.data.size) chunks.push(ev.data); };
     recorder.onstop = deliver;
+    scroller.scrollTop = 0; pos = 0;
+    await countdown();
     recorder.start(1000);
-    recStart = Date.now();
-    $('recState').hidden = false; $('record').textContent = 'Stop'; $('record').setAttribute('aria-pressed', 'true');
+    recStart = Date.now(); recElapsed = 0;
     recTimer = setInterval(() => {
-      const s = Math.round((Date.now() - recStart) / 1000);
-      $('recTime').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-    }, 500);
-    if (!running) setRunning(true);
+      if (recorder.state === 'recording') recElapsed = Math.round((Date.now() - recStart) / 1000);
+      else recStart = Date.now() - recElapsed * 1000;
+      $('record').querySelector('.time').textContent = fmt(recElapsed);
+    }, 250);
+    go();
   }
   function stopRecording() {
-    return new Promise(res => {
-      if (!recorder || recorder.state !== 'recording') return res();
-      const done = recorder.onstop;
-      recorder.onstop = async () => { await done(); res(); };
-      recorder.stop();
-      clearInterval(recTimer);
-      $('recState').hidden = true; $('record').textContent = 'Record'; $('record').setAttribute('aria-pressed', 'false');
-      setRunning(false);
-    });
+    clearTimeout(autoStopTimer);
+    if (!recOn()) return;
+    clearInterval(recTimer);
+    recorder.stop();            // fires deliver()
+    stopScroll();
   }
   async function deliver() {
     const type = recorder.mimeType || chunks[0]?.type || 'video/mp4';
@@ -361,47 +443,75 @@ Good luck. Breathe. Look at the lens.`;
     const filename = `prompter-${stamp}.${ext}`;
     const blob = new Blob(chunks, { type });
     const file = new File([blob], filename, { type });
-    // 1. iOS share sheet: "Save Video" puts it in Photos.
+    recorder = null; paint();
     if (navigator.canShare?.({ files: [file] })) {
       try { await navigator.share({ files: [file], title: 'Prompter recording' }); return; } catch (err) { if (err.name === 'AbortError') return; }
     }
-    // 2. Claude artifact host: confirmed save.
     const downloads = await window.claude?.use?.('downloads');
     if (downloads) {
       try { await downloads.save({ filename, data: blob }); } catch (err) { if (err.code !== 'declined') alert('Could not save: ' + err.message); }
       return;
     }
-    // 3. Plain browser: download link.
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = filename; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
   }
 
-  $('camera').onclick = toggleCamera;
-  $('record').onclick = () => recorder?.state === 'recording' ? stopRecording() : startRecording();
+  // ---- lens side (landscape) ----
+  function applyLens() {
+    prompt.classList.toggle('lens-right', lensRight);
+    $('lens').textContent = lensRight ? 'Lens ▶' : 'Lens ◀';
+    $('lens').hidden = !matchMedia('(orientation: landscape)').matches;
+  }
+  function guessLens() {
+    const t = screen.orientation?.type || '';
+    if (t === 'landscape-primary') lensRight = false;     // iPhone: notch on the left
+    if (t === 'landscape-secondary') lensRight = true;
+    applyLens();
+  }
+
+  // ---- screens ----
+  function openPrompter() {
+    save(); render();
+    $('edit').hidden = true; prompt.hidden = false;
+    scroller.scrollTop = 0; pos = 0;
+    refreshLabels(); keepAwake(); applyLens(); paint(); showHint();
+  }
+  function closePrompter() {
+    if (recOn()) return;
+    stopScroll(); cameraOff();
+    prompt.hidden = true; $('edit').hidden = false;
+    wakeLock?.release?.(); wakeLock = null;
+    refreshLabels();
+  }
 
   $('start').onclick = openPrompter;
   $('back').onclick = closePrompter;
-  $('play').onclick = () => setRunning(!running);
-  $('tapzone').onclick = () => setRunning(!running);
-  $('restart').onclick = () => { setRunning(false); scroller.scrollTop = 0; pos = 0; };
+  $('run').onclick = () => scrolling ? hold() : go();
+  $('record').onclick = () => recOn() ? stopRecording() : startRecording();
+  $('restart').onclick = () => { stopScroll(); scroller.scrollTop = 0; pos = 0; };
+  $('slower').onclick = () => { speedPx = Math.max(8, speedPx - 6); refreshLabels(); save(); };
+  $('faster').onclick = () => { speedPx = Math.min(200, speedPx + 6); refreshLabels(); save(); };
+  $('camera').onclick = () => stream ? cameraOff() : cameraOn();
+  $('lens').onclick = () => { lensRight = !lensRight; applyLens(); save(); };
   $('mirror').onclick = e => {
     const on = !scroller.classList.contains('mirror');
     scroller.classList.toggle('mirror', on);
     e.currentTarget.setAttribute('aria-pressed', on);
     save();
   };
-  speed.oninput = () => { refreshLabels(); save(); };
   size.oninput = () => { render(); refreshLabels(); save(); };
   ta.oninput = () => { refreshLabels(); save(); };
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !$('prompt').hidden) keepAwake(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !prompt.hidden) keepAwake(); });
   document.addEventListener('keydown', e => {
-    if ($('prompt').hidden) return;
-    if (e.code === 'Space') { e.preventDefault(); setRunning(!running); }
+    if (prompt.hidden) return;
+    if (e.code === 'Space') { e.preventDefault(); scrolling ? hold() : go(); }
     if (e.key === 'Escape') closePrompter();
   });
+  matchMedia('(orientation: landscape)').addEventListener('change', guessLens);
+  screen.orientation?.addEventListener?.('change', guessLens);
 
   if (saved.mirror) { scroller.classList.add('mirror'); $('mirror').setAttribute('aria-pressed', 'true'); }
-  render(); refreshLabels();
+  render(); refreshLabels(); applyLens();
 })();
 </script>
