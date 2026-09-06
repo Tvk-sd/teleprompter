@@ -3,20 +3,20 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0B0B0D">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Manrope:wght@500;800&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
   :root {
     --ink: #0B0B0D;
     --ink-2: #16161A;
-    --ink-3: #222228;
-    --paper: #F3EFE6;
-    --paper-dim: #8E8B83;
-    --line: #34343B;
-    --amber: #F5B942;
-    --amber-soft: rgba(245, 185, 66, 0.16);
-    --red: #FF5A4E;
-    --red-soft: rgba(255, 90, 78, 0.18);
+    --paper: #FFFFFF;
+    --paper-70: rgba(255,255,255,0.7);
+    --paper-50: rgba(255,255,255,0.5);
+    --glass: rgba(20,20,24,0.55);
+    --glass-2: rgba(255,255,255,0.08);
+    --edge: rgba(255,255,255,0.14);
+    --red: #FF3B30;
     --script: "Atkinson Hyperlegible", "Helvetica Neue", Arial, sans-serif;
+    --ui: Manrope, -apple-system, "Helvetica Neue", sans-serif;
     --mono: "IBM Plex Mono", "SF Mono", Menlo, monospace;
     --size: 56px;
     --sat: env(safe-area-inset-top, 0px);
@@ -26,14 +26,15 @@
     /* Reading band: as close to the front lens as the status bar allows. */
     --zone: calc(var(--sat) + 9dvh);
     --band-top: calc(var(--zone) - 4px);
-    --r: 14px;
-    /* Control area. Fixed height so nothing moves under the thumb. */
-    --h-step: 64px; --h-primary: 88px; --h-icons: 52px; --gap: 10px;
-    --hud: calc(var(--h-step) + var(--h-primary) + var(--h-icons) + 2 * var(--gap) + 8px + 12px);
+    --band-h: calc(var(--size) * 1.3 * 2.2);
+    /* Control sheet. Fixed height so nothing moves under the thumb. */
+    --h-step: 56px; --h-primary: 76px; --h-icons: 40px; --gap: 10px; --pad: 12px;
+    --sheet: calc(var(--h-step) + var(--h-primary) + var(--h-icons) + 2 * var(--gap) + 2 * var(--pad));
+    --hud: calc(var(--sheet) + 14px);
   }
   html, body { height: 100%; background: var(--ink); color: var(--paper); }
   body {
-    font-family: var(--script);
+    font-family: var(--ui);
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
@@ -42,7 +43,7 @@
   textarea { -webkit-user-select: text; user-select: text; }
   button, input, textarea { font: inherit; color: inherit; }
   button { background: none; border: 0; cursor: pointer; touch-action: manipulation; }
-  button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
   button:disabled { opacity: 0.3; }
   [hidden] { display: none !important; }
 
@@ -55,27 +56,27 @@
     max-width: 720px; margin: 0 auto;
   }
   .brand { display: flex; align-items: baseline; justify-content: space-between; }
-  .brand h1 { font-size: 24px; font-weight: 700; letter-spacing: 0.02em; }
-  .brand span { font-family: var(--mono); font-size: 13px; color: var(--paper-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+  .brand h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; }
+  .brand span { font-size: 13px; font-weight: 700; color: var(--paper-50); letter-spacing: 0.08em; text-transform: uppercase; }
   textarea {
     flex: 1; min-height: 36vh;
     width: 100%; resize: none;
-    background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r);
-    padding: 16px; font-size: 19px; line-height: 1.5;
+    background: var(--ink-2); border: 1px solid var(--edge); border-radius: 22px;
+    padding: 18px; font-size: 19px; line-height: 1.5; font-family: var(--script);
     -webkit-appearance: none;
   }
-  textarea::placeholder { color: var(--paper-dim); }
-  .meta { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 14px; color: var(--paper-dim); letter-spacing: 0.04em; text-transform: uppercase; }
+  textarea::placeholder { color: var(--paper-50); }
+  .meta { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 13px; color: var(--paper-50); letter-spacing: 0.04em; text-transform: uppercase; }
   .setting { display: grid; grid-template-columns: 64px 1fr 72px; align-items: center; gap: 12px; }
-  .setting label { font-family: var(--mono); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper-dim); }
+  .setting label { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper-50); }
   .setting output { font-family: var(--mono); font-size: 17px; text-align: right; font-variant-numeric: tabular-nums; }
-  input[type=range] { width: 100%; accent-color: var(--amber); height: 44px; }
+  input[type=range] { width: 100%; accent-color: var(--paper); height: 44px; }
   .go {
-    background: var(--amber); color: var(--ink);
-    font-weight: 700; font-size: 22px; letter-spacing: 0.02em;
-    border-radius: var(--r); min-height: 72px; width: 100%;
+    background: var(--paper); color: var(--ink);
+    font-weight: 800; font-size: 20px; letter-spacing: 0.01em;
+    border-radius: 999px; min-height: 72px; width: 100%;
   }
-  .go:active { filter: brightness(0.92); }
+  .go:active { filter: brightness(0.9); }
 
   /* ---------- Prompt screen ---------- */
   #prompt { position: fixed; inset: 0; background: var(--ink); }
@@ -83,7 +84,7 @@
     position: absolute; inset: 0; width: 100%; height: 100%;
     object-fit: cover; transform: scaleX(-1); background: var(--ink);
   }
-  #dim { position: absolute; inset: 0; background: rgba(0,0,0,0.35); pointer-events: none; }
+  #dim { position: absolute; inset: 0; background: rgba(0,0,0,0.3); pointer-events: none; }
   #scroller {
     position: absolute; inset: 0;
     overflow-y: auto; overflow-x: hidden;
@@ -94,136 +95,148 @@
   #scroller.mirror { transform: scaleX(-1); }
   #text {
     padding: var(--zone) calc(var(--sar) + 5vw) 80dvh calc(var(--sal) + 5vw);
+    font-family: var(--script);
     font-size: var(--size); line-height: 1.3; font-weight: 700;
     text-wrap: pretty; white-space: pre-wrap; word-break: break-word;
     max-width: 20ch; margin: 0 auto;
     transition: opacity 0.2s;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
   }
   #text p { margin: 0 0 0.6em; }
-  #prompt.camera #text { text-shadow: 0 2px 6px rgba(0,0,0,0.9); }
   #prompt.camera #text p {
-    background: rgba(11,11,13,0.72); padding: 0.08em 0.3em; border-radius: 0.18em;
+    background: rgba(0,0,0,0.38); padding: 0.06em 0.3em; border-radius: 0.2em;
     box-decoration-break: clone; -webkit-box-decoration-break: clone;
   }
-  #prompt.held #text { opacity: 0.45; }
+  #prompt.held #text { opacity: 0.4; }
 
+  /* Reading band: a soft strip of light with a tick at the lens side. */
   .zone {
-    position: absolute; left: var(--sal); right: var(--sar); pointer-events: none;
-    top: var(--band-top);
-    height: calc(var(--size) * 1.3 * 2.2);
-    border-top: 3px solid var(--amber);
-    border-bottom: 3px solid var(--amber);
-    opacity: 0.8;
+    position: absolute; left: 0; right: 0; pointer-events: none;
+    top: var(--band-top); height: var(--band-h);
+    background: linear-gradient(rgba(255,255,255,0) 0%, rgba(255,255,255,0.10) 25%, rgba(255,255,255,0.10) 75%, rgba(255,255,255,0) 100%);
   }
-  .zone::before { content: ""; position: absolute; left: 0; top: -6px; border: 9px solid transparent; border-left: 14px solid var(--amber); }
+  .zone::before { content: ""; position: absolute; left: var(--sal); top: 30%; width: 4px; height: 40%; border-radius: 2px; background: var(--paper); }
   .fade-top {
     position: absolute; left: 0; right: 0; top: 0; height: var(--band-top);
-    background: linear-gradient(var(--ink) 20%, rgba(11,11,13,0.9) 60%, rgba(11,11,13,0)); pointer-events: none;
+    background: linear-gradient(var(--ink) 25%, rgba(11,11,13,0.85) 65%, rgba(11,11,13,0)); pointer-events: none;
   }
-  #prompt.camera .fade-top { background: linear-gradient(rgba(11,11,13,0.6), rgba(11,11,13,0)); }
+  #prompt.camera .fade-top { background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0)); }
+  /* Words below the band step back. */
+  .fade-bottom {
+    position: absolute; left: 0; right: 0; bottom: 0; top: calc(var(--band-top) + var(--band-h)); pointer-events: none;
+    background: linear-gradient(rgba(11,11,13,0.25), rgba(11,11,13,0.6) 60%);
+  }
 
-  /* Status chip above the band: serves the eye. Button labels serve the thumb. */
-  #chip {
-    position: absolute; right: calc(var(--sar) + 12px);
-    top: calc(var(--sat) + 8px);
-    font-family: var(--mono); font-size: 18px; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 6px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap;
-    background: rgba(11,11,13,0.8); color: var(--amber); border: 1px solid var(--amber);
-    display: flex; gap: 10px; align-items: center;
+  /* Progress line under the status bar. */
+  #progress {
+    position: absolute; left: calc(var(--sal) + 20px); right: calc(var(--sar) + 20px); top: calc(var(--sat) + 6px);
+    height: 3px; border-radius: 2px; background: rgba(255,255,255,0.22); pointer-events: none;
   }
-  #chip.rec { color: var(--red); border-color: var(--red); }
-  #chip.rec::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--red); animation: blink 1s steps(2) infinite; }
+  #progress i { display: block; width: 0; height: 100%; border-radius: 2px; background: var(--paper); transition: width 0.15s linear; }
+  /* Status: one small word. */
+  #chip {
+    position: absolute; right: calc(var(--sar) + 20px); top: calc(var(--sat) + 16px);
+    font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--paper-70); pointer-events: none; white-space: nowrap;
+    display: flex; gap: 7px; align-items: center;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  }
+  #chip.rec { color: var(--red); }
+  #chip.rec::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--red); animation: blink 1s steps(2) infinite; }
   #chip.held::before { animation: none; }
   @keyframes blink { to { opacity: 0; } }
   #count {
     position: absolute; left: 50%; transform: translateX(-50%);
     top: calc(var(--band-top) + 8px);
-    font-size: calc(var(--size) * 1.6); font-weight: 700; color: var(--amber); pointer-events: none;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+    font-family: var(--script); font-size: calc(var(--size) * 1.6); font-weight: 700; color: var(--paper); pointer-events: none;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.9);
   }
   #hint {
     position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--sab) + var(--hud) + 12px);
-    font-size: 20px; color: var(--paper); background: rgba(11,11,13,0.85);
-    border: 1px solid var(--line); border-radius: var(--r); padding: 12px 18px; pointer-events: none;
+    font-size: 17px; font-weight: 700; color: var(--paper); background: var(--glass);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--edge); border-radius: 999px; padding: 12px 20px; pointer-events: none;
     white-space: nowrap;
   }
 
-  /* ---------- Controls ---------- */
+  /* ---------- Controls: one frosted sheet ---------- */
   #hud {
-    position: absolute; left: 0; right: 0; bottom: 0;
-    height: calc(var(--sab) + var(--hud));
-    padding: 8px calc(var(--sar) + 12px) calc(var(--sab) + 12px) calc(var(--sal) + 12px);
-    background: linear-gradient(rgba(11,11,13,0), rgba(11,11,13,0.94) 30%);
+    position: absolute; left: 12px; right: 12px; bottom: calc(var(--sab) + 14px);
+    height: var(--sheet);
+    padding: var(--pad);
+    background: var(--glass);
+    backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid var(--edge); border-radius: 30px;
     display: grid; gap: var(--gap);
     grid-template-rows: var(--h-icons) var(--h-primary) var(--h-step);
-    pointer-events: none;                 /* taps fall through to the words */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.35);
   }
-  #hud button, #hud .group { pointer-events: auto; }
 
-  /* Row 1: speed. One bordered group, so it reads as a dial, not as buttons. */
-  .group {
-    display: grid; grid-template-columns: 64px 1fr 64px;
-    border: 1px solid var(--line); border-radius: var(--r); background: rgba(22,22,26,0.8);
+  /* Row 1: tools as quiet text tabs. */
+  .icons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; transition: opacity 0.2s; }
+  .icons.ghost { opacity: 0.45; }
+  .icons button {
+    border-radius: 999px; font-size: 14px; font-weight: 800; color: var(--paper-70);
+    display: flex; align-items: center; justify-content: center; position: relative;
   }
-  .group button { font-size: 30px; font-weight: 700; color: var(--paper); }
-  .group button:active { background: var(--ink-3); }
-  .group button:first-child { border-radius: var(--r) 0 0 var(--r); border-right: 1px solid var(--line); }
-  .group button:last-child { border-radius: 0 var(--r) var(--r) 0; border-left: 1px solid var(--line); }
-  .group .speed { display: grid; place-items: center; font-family: var(--mono); font-size: 22px; font-variant-numeric: tabular-nums; line-height: 1.1; }
-  .group .speed small { display: block; font-size: 12px; color: var(--paper-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+  .icons button:active { background: var(--glass-2); }
+  .icons button[aria-pressed="true"] { color: var(--paper); }
+  .icons button[aria-pressed="true"]::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 3px; height: 2px; border-radius: 1px; background: var(--paper); }
+  .icons button .aa { font-family: var(--mono); font-size: 12px; opacity: 0.7; margin-left: 4px; }
 
-  /* Row 2: the two actions. Run is the amber primary; Record is fixed width so the row never reflows. */
+  /* Row 2: two pills. Run is the white shutter; Record is a ghost pill with the red ring. */
   .primary { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
   .btn {
-    border-radius: var(--r); font-size: 21px; font-weight: 700;
-    background: var(--ink-3); border: 1px solid var(--line);
+    border-radius: 999px; font-size: 19px; font-weight: 800;
     display: flex; align-items: center; justify-content: center; gap: 10px;
     padding: 0 12px;
   }
-  .btn:active { filter: brightness(1.25); }
-  .btn.run { background: var(--amber); color: var(--ink); border-color: var(--amber); }
-  .btn.run[aria-pressed="true"] { background: var(--amber-soft); color: var(--amber); }
-  .btn.record { background: var(--red-soft); color: var(--red); border-color: var(--red); }
-  .btn.record[aria-pressed="true"] { background: var(--red); color: var(--paper); }
-  .btn.record .dot { width: 18px; height: 18px; border-radius: 50%; background: currentColor; }
-  .btn.record[aria-pressed="true"] .dot { border-radius: 3px; }
-  .btn.record .time { font-family: var(--mono); font-size: 20px; font-variant-numeric: tabular-nums; font-weight: 500; }
+  .btn.run { background: var(--paper); color: var(--ink); }
+  .btn.run:active { filter: brightness(0.9); }
+  .btn.run[aria-pressed="true"] { background: var(--glass-2); color: var(--paper); border: 1.5px solid var(--edge); }
+  .btn.record { background: var(--glass-2); color: var(--paper); border: 1.5px solid rgba(255,255,255,0.25); }
+  .btn.record:active { background: rgba(255,255,255,0.14); }
+  .btn.record[aria-pressed="true"] { background: var(--red); border-color: var(--red); }
+  .btn.record .dot { width: 22px; height: 22px; border-radius: 50%; background: var(--red); border: 3px solid var(--paper); box-sizing: border-box; }
+  .btn.record[aria-pressed="true"] .dot { width: 18px; height: 18px; border-radius: 4px; background: var(--paper); border: 0; }
+  .btn.record .time { font-family: var(--mono); font-size: 19px; font-variant-numeric: tabular-nums; font-weight: 500; }
 
-  /* Row 3: pre-flight tools. Ghosted while the words move. */
-  .icons { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--gap); transition: opacity 0.2s; }
-  .icons.ghost { opacity: 0.45; }
-  .icons button {
-    border-radius: var(--r); border: 1px solid var(--line); background: rgba(22,22,26,0.8);
-    font-size: 17px; font-weight: 700; letter-spacing: 0.02em;
-    display: flex; align-items: center; justify-content: center;
+  /* Row 3: the speed dial, one pill. */
+  .group {
+    display: grid; grid-template-columns: 56px 1fr 56px;
+    border-radius: 999px; background: var(--glass-2);
   }
-  .icons button:active { background: var(--ink-3); }
-  .icons button[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); background: var(--amber-soft); }
-  .icons button .aa { font-family: var(--mono); font-size: 13px; opacity: 0.8; margin-left: 4px; }
+  .group button { font-size: 28px; font-weight: 500; color: var(--paper); border-radius: 999px; }
+  .group button:active { background: rgba(255,255,255,0.14); }
+  .group .speed { display: flex; align-items: baseline; justify-content: center; gap: 8px; font-family: var(--mono); font-size: 20px; font-variant-numeric: tabular-nums; align-self: center; }
+  .group .speed small { font-family: var(--ui); font-size: 11px; font-weight: 800; color: var(--paper-50); letter-spacing: 0.12em; text-transform: uppercase; }
 
-  /* Landscape: controls sit on the non-lens half, in two short rows. */
+  /* Landscape: sheet sits on the non-lens half, two short rows. */
   @media (orientation: landscape) {
-    :root { --zone: 12dvh; --h-step: 52px; --h-primary: 60px; --h-icons: 40px; --gap: 6px; --hud: calc(var(--h-primary) + var(--h-icons) + var(--gap) + 8px + 6px); }
+    :root { --zone: 12dvh; --h-step: 48px; --h-primary: 56px; --h-icons: 36px; --gap: 6px; --pad: 8px;
+            --sheet: calc(var(--h-primary) + var(--h-icons) + var(--gap) + 2 * var(--pad)); --hud: calc(var(--sheet) + 10px); }
     #text { max-width: 24ch; margin: 0 auto 0 calc(var(--sal) + 4vw); }
     #prompt.lens-right #text { margin: 0 calc(var(--sar) + 4vw) 0 auto; }
-    #chip { top: 10px; }
-    #prompt.lens-right #chip { right: auto; left: calc(var(--sal) + 12px); }
+    #prompt.lens-right .zone::before { left: auto; right: var(--sar); }
+    #chip { top: 14px; }
+    #prompt.lens-right #chip { right: auto; left: calc(var(--sal) + 20px); }
+    #progress { top: 6px; }
     #hud {
-      left: 50%; right: 0; padding-left: 12px; padding-bottom: calc(var(--sab) + 6px);
-      grid-template-rows: var(--h-icons) var(--h-primary); grid-template-columns: 1fr 1fr;
+      left: 50%; right: calc(var(--sar) + 10px); bottom: calc(var(--sab) + 10px);
+      grid-template-rows: var(--h-icons) var(--h-primary); grid-template-columns: 1fr 1fr; border-radius: 24px;
     }
-    #prompt.lens-right #hud { left: 0; right: 50%; padding-left: calc(var(--sal) + 12px); padding-right: 12px; }
-    .group { grid-row: 2; grid-column: 1; grid-template-columns: 52px 1fr 52px; }
-    .group .speed { font-size: 18px; } .group .speed small { display: none; }
+    #prompt.lens-right #hud { left: calc(var(--sal) + 10px); right: 50%; }
+    .icons { grid-row: 1; grid-column: 1 / -1; grid-template-columns: repeat(6, 1fr); }
+    .icons button { font-size: 13px; }
     .primary { grid-row: 2; grid-column: 2; }
-    .btn { font-size: 18px; }
+    .btn { font-size: 17px; }
     .btn.record[aria-pressed="true"] .lbl { display: none; }
     .btn.record .time { font-size: 16px; }
-    .icons { grid-row: 1; grid-column: 1 / -1; grid-template-columns: repeat(6, 1fr); }
-    .icons button { font-size: 14px; }
+    .group { grid-row: 2; grid-column: 1; grid-template-columns: 48px 1fr 48px; }
+    .group .speed { font-size: 17px; } .group .speed small { display: none; }
     #hint { bottom: auto; top: calc(var(--band-top) + var(--size) * 3); }
   }
-  @media (prefers-reduced-motion: reduce) { #chip.rec::before { animation: none; } #text, .icons { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { #chip.rec::before { animation: none; } #text, .icons, #progress i { transition: none; } }
 </style>
 
 <main id="edit">
@@ -251,7 +264,9 @@
     <div id="text"></div>
   </div>
   <div class="fade-top"></div>
+  <div class="fade-bottom"></div>
   <div class="zone"></div>
+  <div id="progress"><i></i></div>
   <div id="chip" role="status" aria-live="polite">Ready</div>
   <div id="count" hidden>3</div>
   <div id="hint" hidden>Tap the words to hold. Tap again to go on.</div>
@@ -291,7 +306,7 @@ The camera comes on, you get three seconds, then the words and the recording sta
 Holding the words also holds the recording.
 Tap Stop to end and save the video.
 
-The amber band is where your eyes stay.
+The bright band is where your eyes stay.
 It sits near the lens so you look at the camera.
 
 Minus and plus change the speed while you read.
@@ -350,6 +365,11 @@ Breathe. Look at the lens.`;
     applySpeed();
   }
   const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  function progress() {
+    const max = scroller.scrollHeight - scroller.clientHeight;
+    $('progress').firstElementChild.style.width = (max > 0 ? Math.min(100, scroller.scrollTop / max * 100) : 0) + '%';
+  }
+  scroller.addEventListener('scroll', progress, { passive: true });
 
   function paint() {
     chip.classList.toggle('rec', recOn());
@@ -377,8 +397,8 @@ Breathe. Look at the lens.`;
     last = now;
     pos += speedPx * dt;
     const max = scroller.scrollHeight - scroller.clientHeight;
-    if (pos >= max) { pos = max; scroller.scrollTop = pos; endOfScript(); return; }
-    scroller.scrollTop = pos;
+    if (pos >= max) { pos = max; scroller.scrollTop = pos; progress(); endOfScript(); return; }
+    scroller.scrollTop = pos; progress();
     raf = requestAnimationFrame(tick);
   }
   function go() {
@@ -398,7 +418,7 @@ Breathe. Look at the lens.`;
   function stopScroll() { scrolling = false; held = false; cancelAnimationFrame(raf); paint(); }
   function endOfScript() {
     hold();
-    if (recOn()) { chip.textContent = 'End · saving in 3 s'; autoStopTimer = setTimeout(stopRecording, 3000); }
+    if (recOn()) { chip.textContent = 'End · saving'; autoStopTimer = setTimeout(stopRecording, 3000); }
   }
 
   // Tap on the words = hold / go on. A drag scrubs instead.
