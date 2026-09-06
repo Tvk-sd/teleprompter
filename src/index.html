@@ -1,0 +1,300 @@
+<title>Prompter</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B0B0D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --ink: #0B0B0D;
+    --ink-2: #16161A;
+    --paper: #F3EFE6;
+    --paper-dim: #7E7B73;
+    --line: #2A2A30;
+    --amber: #F5B942;
+    --amber-soft: rgba(245, 185, 66, 0.14);
+    --script: "Atkinson Hyperlegible", "Helvetica Neue", Arial, sans-serif;
+    --mono: "IBM Plex Mono", "SF Mono", Menlo, monospace;
+    --size: 44px;
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+  }
+  html, body { height: 100%; background: var(--ink); color: var(--paper); }
+  body {
+    font-family: var(--script);
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { background: none; border: 0; cursor: pointer; }
+  button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  /* ---------- Edit screen ---------- */
+  #edit {
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+    padding: calc(var(--sat) + 20px) 20px calc(var(--sab) + 20px);
+    gap: 14px;
+    max-width: 720px; margin: 0 auto;
+  }
+  .brand { display: flex; align-items: baseline; justify-content: space-between; }
+  .brand h1 { font-size: 22px; font-weight: 700; letter-spacing: 0.02em; }
+  .brand span { font-family: var(--mono); font-size: 12px; color: var(--paper-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+  textarea {
+    flex: 1; min-height: 42vh;
+    width: 100%; resize: none;
+    background: var(--ink-2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px; font-size: 19px; line-height: 1.5;
+    -webkit-appearance: none;
+  }
+  textarea::placeholder { color: var(--paper-dim); }
+  .meta { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 12px; color: var(--paper-dim); letter-spacing: 0.06em; text-transform: uppercase; }
+  .go {
+    background: var(--amber); color: var(--ink);
+    font-weight: 700; font-size: 20px; letter-spacing: 0.02em;
+    border-radius: 14px; padding: 18px; width: 100%;
+  }
+  .go:active { filter: brightness(0.92); }
+
+  /* ---------- Prompt screen ---------- */
+  #prompt { position: fixed; inset: 0; background: var(--ink); }
+  #scroller {
+    position: absolute; inset: 0;
+    overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #scroller::-webkit-scrollbar { display: none; }
+  #scroller.mirror { transform: scaleX(-1); }
+  #text {
+    padding: 42dvh 6vw 70dvh;
+    font-size: var(--size); line-height: 1.32; font-weight: 700;
+    text-wrap: pretty; white-space: pre-wrap; word-break: break-word;
+    max-width: 22ch; margin: 0 auto;
+  }
+  #text p { margin: 0 0 0.7em; }
+  /* Reading zone: the band the eye stays on. Fade everything above it. */
+  .zone {
+    position: absolute; left: 0; right: 0; pointer-events: none;
+    top: calc(42dvh - 0.2em);
+    height: calc(var(--size) * 1.32 * 2.2);
+    border-top: 2px solid var(--amber);
+    border-bottom: 2px solid var(--amber);
+    opacity: 0.7;
+  }
+  .zone::before { content: ""; position: absolute; left: 0; top: -4px; border: 7px solid transparent; border-left: 12px solid var(--amber); }
+  .fade-top {
+    position: absolute; left: 0; right: 0; top: 0; height: calc(42dvh - 0.2em);
+    background: linear-gradient(var(--ink) 30%, rgba(11,11,13,0.85) 70%, rgba(11,11,13,0)); pointer-events: none;
+  }
+  #tapzone { position: absolute; inset: 0; }
+
+  #hud {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 14px 16px calc(var(--sab) + 14px);
+    background: linear-gradient(rgba(11,11,13,0), rgba(11,11,13,0.96) 30%);
+    display: grid; gap: 12px;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  #hud.hidden { opacity: 0; transform: translateY(12px); pointer-events: none; }
+  .row { display: grid; grid-template-columns: 62px 1fr 64px; align-items: center; gap: 12px; }
+  .row label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--paper-dim); }
+  .row output { font-family: var(--mono); font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--amber); height: 32px; }
+  .btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+  .btns button {
+    background: var(--ink-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 6px; font-size: 14px; font-weight: 700;
+  }
+  .btns button[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); background: var(--amber-soft); }
+  .btns .play { background: var(--amber); color: var(--ink); border-color: var(--amber); }
+  #state {
+    position: absolute; top: calc(var(--sat) + 12px); right: 16px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--amber); pointer-events: none;
+  }
+  #count {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: 30vmin; font-weight: 700; color: var(--amber);
+    background: rgba(11,11,13,0.6); pointer-events: none;
+  }
+  @media (prefers-reduced-motion: reduce) { #hud { transition: none; } }
+</style>
+
+<main id="edit">
+  <div class="brand">
+    <h1>Prompter</h1>
+    <span>Reads on iPhone</span>
+  </div>
+  <textarea id="script" placeholder="Paste or type your script here. One idea per line." spellcheck="false"></textarea>
+  <div class="meta">
+    <span id="words">0 words</span>
+    <span id="est">~0:00 at current speed</span>
+  </div>
+  <button class="go" id="start">Start prompter</button>
+</main>
+
+<section id="prompt" hidden>
+  <div id="scroller">
+    <div id="text"></div>
+  </div>
+  <div class="fade-top"></div>
+  <div class="zone"></div>
+  <div id="tapzone" aria-label="Tap to pause or resume"></div>
+  <div id="state">Paused · tap to run</div>
+  <div id="count" hidden>3</div>
+  <div id="hud">
+    <div class="row">
+      <label for="speed">Speed</label>
+      <input type="range" id="speed" min="10" max="160" step="2" value="52">
+      <output id="speedOut">120 wpm</output>
+    </div>
+    <div class="row">
+      <label for="size">Size</label>
+      <input type="range" id="size" min="24" max="96" step="2" value="44">
+      <output id="sizeOut">44 px</output>
+    </div>
+    <div class="btns">
+      <button id="back">Edit</button>
+      <button id="restart">Top</button>
+      <button id="mirror" aria-pressed="false">Mirror</button>
+      <button id="play" class="play">Run</button>
+    </div>
+  </div>
+</section>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const SAMPLE = `Example script. Replace me.
+
+Tap the screen once to start scrolling.
+Tap again to pause.
+
+The amber band is where your eyes stay.
+The words come to you. You do not chase them.
+
+Drag the Speed slider until the pace feels like your own voice.
+Drag Size until you can read this from across the room.
+
+Mirror flips the text for a real teleprompter glass.
+Top jumps back to the start.
+
+Good luck. Breathe. Look at the lens.`;
+
+  const KEY = 'prompter.v1';
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+
+  const ta = $('script'), speed = $('speed'), size = $('size');
+  ta.value = saved.text ?? SAMPLE;
+  speed.value = saved.speed ?? 52;
+  size.value = saved.size ?? 44;
+
+  const scroller = $('scroller'), text = $('text'), hud = $('hud'), state = $('state');
+  let running = false, pos = 0, last = 0, raf = 0, wakeLock = null;
+
+  const words = () => (ta.value.trim().match(/\S+/g) || []).length;
+
+  // Speed is stored as px/s. The label shows words per minute so it means
+  // something to a human. Estimate: how many words fit in one scrolled px.
+  function wpm() {
+    const h = text.scrollHeight - 1.12 * innerHeight; // minus the empty lead-in / lead-out
+    const w = words();
+    if (h <= 0 || !w) return Math.round(+speed.value * 2.3);
+    return Math.round((+speed.value / h) * w * 60);
+  }
+  function refreshLabels() {
+    const w = words();
+    $('words').textContent = `${w} word${w === 1 ? '' : 's'}`;
+    const secs = wpm() ? Math.round(w / wpm() * 60) : 0;
+    $('est').textContent = `~${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')} at current speed`;
+    $('speedOut').textContent = `${wpm()} wpm`;
+    $('sizeOut').textContent = `${size.value} px`;
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ text: ta.value, speed: +speed.value, size: +size.value, mirror: scroller.classList.contains('mirror') })); } catch (e) {}
+  }
+  function render() {
+    text.innerHTML = '';
+    ta.value.split(/\n{2,}/).forEach(chunk => {
+      const p = document.createElement('p');
+      p.textContent = chunk.trim();
+      text.appendChild(p);
+    });
+    document.documentElement.style.setProperty('--size', size.value + 'px');
+  }
+
+  // ---- scrolling loop ----
+  function tick(now) {
+    if (!running) return;
+    const dt = Math.min((now - last) / 1000, 0.1);
+    last = now;
+    pos += +speed.value * dt;
+    const max = scroller.scrollHeight - scroller.clientHeight;
+    if (pos >= max) { pos = max; setRunning(false); }
+    scroller.scrollTop = pos;
+    raf = requestAnimationFrame(tick);
+  }
+  function setRunning(on) {
+    running = on;
+    hud.classList.toggle('hidden', on);
+    state.textContent = on ? 'Running · tap to pause' : 'Paused · tap to run';
+    $('play').textContent = on ? 'Pause' : 'Run';
+    if (on) { pos = scroller.scrollTop; last = performance.now(); raf = requestAnimationFrame(tick); }
+    else cancelAnimationFrame(raf);
+  }
+  async function countdown() {
+    const c = $('count');
+    c.hidden = false;
+    for (const n of [3, 2, 1]) { c.textContent = n; await new Promise(r => setTimeout(r, 700)); }
+    c.hidden = true;
+  }
+  async function keepAwake() {
+    try { wakeLock = await navigator.wakeLock?.request('screen'); } catch (e) {}
+  }
+
+  // ---- screens ----
+  async function openPrompter() {
+    save(); render();
+    $('edit').hidden = true; $('prompt').hidden = false;
+    scroller.scrollTop = 0; pos = 0;
+    refreshLabels();
+    keepAwake();
+    await countdown();
+    setRunning(true);
+  }
+  function closePrompter() {
+    setRunning(false);
+    $('prompt').hidden = true; $('edit').hidden = false;
+    wakeLock?.release?.(); wakeLock = null;
+    refreshLabels();
+  }
+
+  $('start').onclick = openPrompter;
+  $('back').onclick = closePrompter;
+  $('play').onclick = () => setRunning(!running);
+  $('tapzone').onclick = () => setRunning(!running);
+  $('restart').onclick = () => { setRunning(false); scroller.scrollTop = 0; pos = 0; };
+  $('mirror').onclick = e => {
+    const on = !scroller.classList.contains('mirror');
+    scroller.classList.toggle('mirror', on);
+    e.currentTarget.setAttribute('aria-pressed', on);
+    save();
+  };
+  speed.oninput = () => { refreshLabels(); save(); };
+  size.oninput = () => { render(); refreshLabels(); save(); };
+  ta.oninput = () => { refreshLabels(); save(); };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !$('prompt').hidden) keepAwake(); });
+  document.addEventListener('keydown', e => {
+    if ($('prompt').hidden) return;
+    if (e.code === 'Space') { e.preventDefault(); setRunning(!running); }
+    if (e.key === 'Escape') closePrompter();
+  });
+
+  if (saved.mirror) { scroller.classList.add('mirror'); $('mirror').setAttribute('aria-pressed', 'true'); }
+  render(); refreshLabels();
+})();
+</script>
